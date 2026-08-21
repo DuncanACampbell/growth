@@ -1,16 +1,31 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
-import {
-  getAuth,
-  getReactNativePersistence,
-  initializeAuth,
-  type Auth,
-} from 'firebase/auth';
+import * as FirebaseAuth from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 
 import { getFirebaseClientConfig } from './env';
+
+const { getAuth, initializeAuth } = FirebaseAuth;
+type Auth = FirebaseAuth.Auth;
+type Persistence = FirebaseAuth.Persistence;
+
+/**
+ * Firebase's public `firebase/auth` types target the web entry and omit
+ * `getReactNativePersistence`. Metro still resolves the RN Auth bundle, where
+ * the helper exists at runtime.
+ */
+function getReactNativePersistence(
+  storage: typeof AsyncStorage,
+): Persistence {
+  const { getReactNativePersistence: createNativePersistence } =
+    FirebaseAuth as typeof FirebaseAuth & {
+      getReactNativePersistence: (storage: typeof AsyncStorage) => Persistence;
+    };
+
+  return createNativePersistence(storage);
+}
 
 let auth: Auth | undefined;
 let firestore: Firestore | undefined;
