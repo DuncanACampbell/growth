@@ -17,18 +17,18 @@ export const MOCK_TODAY: IsoDate = '2026-08-21';
 export const MOCK_THEMES: Theme[] = [
   {
     id: 'theme-presence',
-    name: 'Presence',
-    description: 'Notice what is actually happening, then respond on purpose.',
+    name: 'Self Confidence',
+    description: '30 daily challenges to help you reframe who you are and why you should love yourself.',
   },
   {
     id: 'theme-courage',
-    name: 'Courage',
-    description: 'Take the small honest action you have been putting off.',
+    name: 'Motivation',
+    description: 'Feel a surge of energy for achieving your goals after doing our 30-day plan.',
   },
   {
     id: 'theme-discipline',
-    name: 'Discipline',
-    description: 'Keep a simple promise to yourself, once, today.',
+    name: 'Body confidence',
+    description: 'Looking in the mirror gets a lot easier with our plan for reinforcing your positive body beliefs',
   },
 ];
 
