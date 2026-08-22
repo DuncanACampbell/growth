@@ -1,15 +1,15 @@
 import { Redirect, router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import {
+  getExampleStatement,
+  getGuidedTurns,
   getHomeState,
   getTodaysChallenge,
   getTodaysStatement,
-  MOCK_CHALLENGE_TURNS,
-  MOCK_STATEMENT_TEXT,
 } from '@/data/mock';
 import { useMockSession } from '@/lib/mock-session';
 import { useTheme } from '@/theme';
@@ -29,41 +29,40 @@ export default function ChallengeScreen() {
     ? getTodaysStatement(world, todaysChallenge?.id ?? null)
     : null;
 
-  const liveMessages = useMemo(() => {
-    const messages: ChallengeMessage[] = [];
-    for (let index = 0; index < turnIndex; index += 1) {
-      const turn = MOCK_CHALLENGE_TURNS[index];
-      if (!turn) {
-        continue;
-      }
-      messages.push({
-        id: `guide-${index}`,
-        role: 'guide',
-        text: turn.guideText,
-      });
-      messages.push({
-        id: `user-${index}`,
+  const guidedTurns = getGuidedTurns(todaysChallenge?.id);
+
+  const liveMessages: ChallengeMessage[] = [];
+  for (let index = 0; index < turnIndex; index += 1) {
+    const turn = guidedTurns[index];
+    if (!turn) {
+      continue;
+    }
+    liveMessages.push({
+      id: `guide-${index}`,
+      role: 'guide',
+      text: turn.guideText,
+    });
+    liveMessages.push({
+      id: `user-${index}`,
+      role: 'user',
+      text: turn.userReply,
+    });
+  }
+  const currentTurn = guidedTurns[turnIndex];
+  if (currentTurn) {
+    liveMessages.push({
+      id: `guide-${turnIndex}`,
+      role: 'guide',
+      text: currentTurn.guideText,
+    });
+    if (!awaitingReply) {
+      liveMessages.push({
+        id: `user-${turnIndex}`,
         role: 'user',
-        text: turn.userReply,
+        text: currentTurn.userReply,
       });
     }
-    const current = MOCK_CHALLENGE_TURNS[turnIndex];
-    if (current) {
-      messages.push({
-        id: `guide-${turnIndex}`,
-        role: 'guide',
-        text: current.guideText,
-      });
-      if (!awaitingReply) {
-        messages.push({
-          id: `user-${turnIndex}`,
-          role: 'user',
-          text: current.userReply,
-        });
-      }
-    }
-    return messages;
-  }, [turnIndex, awaitingReply]);
+  }
 
   if (!isSignedIn || !world) {
     return <Redirect href="/login" />;
@@ -76,14 +75,14 @@ export default function ChallengeScreen() {
   const showCompletion = alreadyComplete;
 
   function sendMockReply() {
-    const current = MOCK_CHALLENGE_TURNS[turnIndex];
+    const current = guidedTurns[turnIndex];
     if (!current) {
       return;
     }
 
     setAwaitingReply(false);
 
-    const isLastTurn = turnIndex >= MOCK_CHALLENGE_TURNS.length - 1;
+    const isLastTurn = turnIndex >= guidedTurns.length - 1;
     if (isLastTurn) {
       completeToday();
       return;
@@ -106,7 +105,7 @@ export default function ChallengeScreen() {
           {showCompletion ? 'Today’s statement' : 'Today’s challenge'}
         </AppText>
         <AppText variant="body" tone="muted">
-          {todaysChallenge.title}
+          {todaysChallenge.prompt}
         </AppText>
 
         {showCompletion ? (
@@ -124,7 +123,9 @@ export default function ChallengeScreen() {
               Statement of the day
             </AppText>
             <AppText variant="subtitle">
-              {todaysStatement?.text ?? MOCK_STATEMENT_TEXT}
+              {todaysStatement?.text ??
+                getExampleStatement(todaysChallenge.id) ??
+                todaysChallenge.title}
             </AppText>
           </View>
         ) : (
@@ -193,8 +194,8 @@ export default function ChallengeScreen() {
             ]}
           >
             <AppText variant="body" tone="onPrimary">
-              {MOCK_CHALLENGE_TURNS[turnIndex]
-                ? `Reply: ${MOCK_CHALLENGE_TURNS[turnIndex]?.userReply}`
+              {guidedTurns[turnIndex]
+                ? `Reply: ${guidedTurns[turnIndex]?.userReply}`
                 : 'Continue'}
             </AppText>
           </Pressable>

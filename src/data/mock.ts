@@ -14,43 +14,277 @@ export type PersonaId = 'new' | 'incomplete' | 'complete';
 
 export const MOCK_TODAY: IsoDate = '2026-08-21';
 
+const PAST_DATES: IsoDate[] = ['2026-08-19', '2026-08-20'];
+
 export const MOCK_THEMES: Theme[] = [
   {
     id: 'theme-presence',
     name: 'Self Confidence',
-    description: '30 daily challenges to help you reframe who you are and why you should love yourself.',
+    description:
+      '30 daily challenges to help you reframe who you are and why you should love yourself.',
   },
   {
     id: 'theme-courage',
     name: 'Motivation',
-    description: 'Feel a surge of energy for achieving your goals after doing our 30-day plan.',
+    description:
+      'Feel a surge of energy for achieving your goals after doing our 30-day plan.',
   },
   {
     id: 'theme-discipline',
     name: 'Body confidence',
-    description: 'Looking in the mirror gets a lot easier with our plan for reinforcing your positive body beliefs',
+    description:
+      'Looking in the mirror gets a lot easier with our plan for reinforcing your positive body beliefs',
   },
 ];
 
+/**
+ * One guided beat. `guideText` is what a future LLM would ask;
+ * `userReply` stands in for the user until input is wired up.
+ */
 export type ChallengeTurn = {
   guideText: string;
   userReply: string;
 };
 
-/** Hard-coded guided exercise. The real LLM will replace this later. */
-export const MOCK_CHALLENGE_TURNS: ChallengeTurn[] = [
+/**
+ * Catalog row for a theme's daily exercise. Later this maps cleanly to a
+ * Firestore `challenges` document; `turns` will be replaced by LLM output.
+ */
+export type ChallengeBlueprint = {
+  id: string;
+  themeId: string;
+  dayIndex: number;
+  title: string;
+  prompt: string;
+  turns: ChallengeTurn[];
+  exampleStatement: string;
+};
+
+export const MOCK_CHALLENGE_BLUEPRINTS: ChallengeBlueprint[] = [
   {
-    guideText: 'What is one thing you avoided today?',
-    userReply: 'I delayed a conversation I know I need to have.',
+    id: 'challenge-presence-1',
+    themeId: 'theme-presence',
+    dayIndex: 1,
+    title: 'Count one win',
+    prompt: 'Find a recent moment you handled well, and let it count.',
+    turns: [
+      {
+        guideText:
+          'When did you recently handle something better than you usually give yourself credit for?',
+        userReply: 'I stayed calm when a meeting went off track this morning.',
+      },
+      {
+        guideText: 'What did you actually do in that moment?',
+        userReply: 'I asked one clarifying question instead of shutting down.',
+      },
+      {
+        guideText: 'What would you say to a friend who did that?',
+        userReply: 'That is someone who can keep their head.',
+      },
+      {
+        guideText: 'Write one sentence that gives yourself the same credit.',
+        userReply: 'I keep my head when things get messy.',
+      },
+    ],
+    exampleStatement: 'I keep my head when things get messy.',
   },
   {
-    guideText: 'If you did the smallest honest version of that, what would you do?',
-    userReply: 'Send a short message that names the thing directly.',
+    id: 'challenge-presence-2',
+    themeId: 'theme-presence',
+    dayIndex: 2,
+    title: 'Catch the critic',
+    prompt: 'Notice one harsh thought and rewrite it into something fair.',
+    turns: [
+      {
+        guideText: 'What critical sentence about yourself showed up today?',
+        userReply: 'I told myself I always freeze when it matters.',
+      },
+      {
+        guideText: 'Is that sentence fully true, or just loud?',
+        userReply: 'It is loud. I have handled hard things before.',
+      },
+      {
+        guideText: 'What is a fairer sentence that still tells the truth?',
+        userReply: 'I get nervous, and I can still take the next step.',
+      },
+    ],
+    exampleStatement: 'I get nervous, and I can still take the next step.',
+  },
+  {
+    id: 'challenge-presence-3',
+    themeId: 'theme-presence',
+    dayIndex: 3,
+    title: 'Let a compliment land',
+    prompt: 'Practise receiving credit instead of batting it away.',
+    turns: [
+      {
+        guideText: 'What is a compliment you recently deflected?',
+        userReply: 'Someone said I explained the work clearly.',
+      },
+      {
+        guideText: 'What made you want to shrink it?',
+        userReply: 'I felt like they were just being nice.',
+      },
+      {
+        guideText: 'If you let it be true for ten seconds, what is true?',
+        userReply: 'I did make the work easier to understand.',
+      },
+      {
+        guideText: 'Say that as a statement you can keep today.',
+        userReply: 'I make complicated things easier to understand.',
+      },
+    ],
+    exampleStatement: 'I make complicated things easier to understand.',
+  },
+  {
+    id: 'challenge-courage-1',
+    themeId: 'theme-courage',
+    dayIndex: 1,
+    title: 'Name the real goal',
+    prompt: 'Get underneath busywork and name what you actually want.',
+    turns: [
+      {
+        guideText: 'What goal has been sitting in the background this week?',
+        userReply: 'I want to finish the first draft of my plan.',
+      },
+      {
+        guideText: 'Why does that goal matter to you, in one sentence?',
+        userReply: 'Because I am tired of circling and never starting.',
+      },
+      {
+        guideText: 'What would “started” look like by tonight?',
+        userReply: 'One page written, even if it is rough.',
+      },
+      {
+        guideText: 'Turn that into a statement for today.',
+        userReply: 'I write one rough page instead of circling.',
+      },
+    ],
+    exampleStatement: 'I write one rough page instead of circling.',
+  },
+  {
+    id: 'challenge-courage-2',
+    themeId: 'theme-courage',
+    dayIndex: 2,
+    title: 'Shrink the next step',
+    prompt: 'Make the next action small enough that you cannot honestly postpone it.',
+    turns: [
+      {
+        guideText: 'What task feels heavy enough that you keep delaying it?',
+        userReply: 'Outlining the whole project before I begin.',
+      },
+      {
+        guideText: 'What is a version of that task that takes ten minutes or less?',
+        userReply: 'List the three sections I already know.',
+      },
+      {
+        guideText: 'When today will you do that ten-minute version?',
+        userReply: 'Right after lunch, before I open messages.',
+      },
+    ],
+    exampleStatement: 'After lunch I list three sections and begin.',
+  },
+  {
+    id: 'challenge-courage-3',
+    themeId: 'theme-courage',
+    dayIndex: 3,
+    title: 'Start again without drama',
+    prompt: 'Treat a stall as a pause, then take one restart action.',
+    turns: [
+      {
+        guideText: 'Where did your energy drop off recently?',
+        userReply: 'I stopped after missing two mornings in a row.',
+      },
+      {
+        guideText: 'What story did you tell yourself about that stall?',
+        userReply: 'That I had already blown it, so why continue.',
+      },
+      {
+        guideText: 'What is the smallest restart that would count today?',
+        userReply: 'Open the doc and write for five minutes.',
+      },
+      {
+        guideText: 'Say the restart as a calm statement, not a punishment.',
+        userReply: 'I can start from here in five minutes.',
+      },
+    ],
+    exampleStatement: 'I can start from here in five minutes.',
+  },
+  {
+    id: 'challenge-discipline-1',
+    themeId: 'theme-discipline',
+    dayIndex: 1,
+    title: 'What your body did',
+    prompt: 'Thank your body for a function instead of grading its appearance.',
+    turns: [
+      {
+        guideText: 'What is one thing your body did for you today?',
+        userReply: 'It got me through a long walk to the shop.',
+      },
+      {
+        guideText: 'How did that actually help your day?',
+        userReply: 'I arrived clearer and less stuck in my head.',
+      },
+      {
+        guideText: 'If you thanked your body for that, what would you say?',
+        userReply: 'Thank you for carrying me when my mind was noisy.',
+      },
+    ],
+    exampleStatement: 'Thank you for carrying me when my mind was noisy.',
+  },
+  {
+    id: 'challenge-discipline-2',
+    themeId: 'theme-discipline',
+    dayIndex: 2,
+    title: 'One kinder look',
+    prompt: 'Practise looking at yourself without hunting for a flaw.',
+    turns: [
+      {
+        guideText: 'What do you usually look for first in the mirror?',
+        userReply: 'Whatever I think is wrong that day.',
+      },
+      {
+        guideText: 'Name one neutral or kind detail you skipped past.',
+        userReply: 'My eyes looked awake after sleeping well.',
+      },
+      {
+        guideText: 'What happens if you let that be the first thing you notice?',
+        userReply: 'The rest of the critique gets quieter.',
+      },
+      {
+        guideText: 'Write a statement you can use the next time you look.',
+        userReply: 'I look for what is well before what is wrong.',
+      },
+    ],
+    exampleStatement: 'I look for what is well before what is wrong.',
+  },
+  {
+    id: 'challenge-discipline-3',
+    themeId: 'theme-discipline',
+    dayIndex: 3,
+    title: 'Wear what feels like you',
+    prompt: 'Choose clothes for comfort and self-respect, not for hiding.',
+    turns: [
+      {
+        guideText: 'What outfit do you reach for when you want to disappear?',
+        userReply: 'The oversized jumper I hide in on low days.',
+      },
+      {
+        guideText: 'What would feel like you today without performing for anyone?',
+        userReply: 'The shirt that fits and still feels easy.',
+      },
+      {
+        guideText: 'What would choosing that be saying to yourself?',
+        userReply: 'I do not have to hide to be acceptable.',
+      },
+      {
+        guideText: 'Turn that into today’s statement.',
+        userReply: 'I do not have to hide to be acceptable.',
+      },
+    ],
+    exampleStatement: 'I do not have to hide to be acceptable.',
   },
 ];
-
-export const MOCK_STATEMENT_TEXT =
-  'I send the short honest message instead of waiting.';
 
 export type MockWorld = {
   personaId: PersonaId;
@@ -61,28 +295,51 @@ export type MockWorld = {
   statements: StatementOfTheDay[];
 };
 
-const TODAY_CHALLENGES: Challenge[] = MOCK_THEMES.map((theme) => ({
-  id: `challenge-today-${theme.id}`,
-  themeId: theme.id,
-  date: MOCK_TODAY,
-  title: 'One honest action',
-}));
+export function getChallengeBlueprint(
+  challengeId: string | null | undefined,
+): ChallengeBlueprint | null {
+  if (!challengeId) {
+    return null;
+  }
+  return MOCK_CHALLENGE_BLUEPRINTS.find((item) => item.id === challengeId) ?? null;
+}
 
-function previousChallenges(themeId: string): Challenge[] {
-  return [
-    {
-      id: `challenge-${themeId}-2026-08-20`,
-      themeId,
-      date: '2026-08-20',
-      title: 'Name the resistance',
-    },
-    {
-      id: `challenge-${themeId}-2026-08-19`,
-      themeId,
-      date: '2026-08-19',
-      title: 'Keep a small promise',
-    },
-  ];
+export function getThemeBlueprints(themeId: string): ChallengeBlueprint[] {
+  return MOCK_CHALLENGE_BLUEPRINTS.filter((item) => item.themeId === themeId).sort(
+    (a, b) => a.dayIndex - b.dayIndex,
+  );
+}
+
+const EMPTY_TURNS: ChallengeTurn[] = [];
+
+export function getGuidedTurns(challengeId: string | null | undefined): ChallengeTurn[] {
+  return getChallengeBlueprint(challengeId)?.turns ?? EMPTY_TURNS;
+}
+
+export function getExampleStatement(
+  challengeId: string | null | undefined,
+): string | null {
+  return getChallengeBlueprint(challengeId)?.exampleStatement ?? null;
+}
+
+function challengeFromBlueprint(
+  blueprint: ChallengeBlueprint,
+  date: IsoDate,
+): Challenge {
+  return {
+    id: blueprint.id,
+    themeId: blueprint.themeId,
+    date,
+    title: blueprint.title,
+    prompt: blueprint.prompt,
+  };
+}
+
+function firstChallengeForEachTheme(): Challenge[] {
+  return MOCK_THEMES.flatMap((theme) => {
+    const first = getThemeBlueprints(theme.id)[0];
+    return first ? [challengeFromBlueprint(first, MOCK_TODAY)] : [];
+  });
 }
 
 function statement(
@@ -115,29 +372,22 @@ function completedSession(
   };
 }
 
-function pastMessages(prefix: string): ChallengeMessage[] {
-  return [
+function messagesFromBlueprint(
+  blueprint: ChallengeBlueprint,
+  prefix: string,
+): ChallengeMessage[] {
+  return blueprint.turns.flatMap((turn, index) => [
     {
-      id: `${prefix}-g1`,
-      role: 'guide',
-      text: MOCK_CHALLENGE_TURNS[0]?.guideText ?? '',
+      id: `${prefix}-g${index + 1}`,
+      role: 'guide' as const,
+      text: turn.guideText,
     },
     {
-      id: `${prefix}-u1`,
-      role: 'user',
-      text: MOCK_CHALLENGE_TURNS[0]?.userReply ?? '',
+      id: `${prefix}-u${index + 1}`,
+      role: 'user' as const,
+      text: turn.userReply,
     },
-    {
-      id: `${prefix}-g2`,
-      role: 'guide',
-      text: MOCK_CHALLENGE_TURNS[1]?.guideText ?? '',
-    },
-    {
-      id: `${prefix}-u2`,
-      role: 'user',
-      text: MOCK_CHALLENGE_TURNS[1]?.userReply ?? '',
-    },
-  ];
+  ]);
 }
 
 function worldForNewUser(): MockWorld {
@@ -152,7 +402,7 @@ function worldForNewUser(): MockWorld {
     personaId: 'new',
     user,
     themes: MOCK_THEMES,
-    challenges: TODAY_CHALLENGES,
+    challenges: firstChallengeForEachTheme(),
     sessions: [],
     statements: [],
   };
@@ -160,72 +410,120 @@ function worldForNewUser(): MockWorld {
 
 function worldForIncomplete(): MockWorld {
   const themeId = 'theme-courage';
+  const plan = getThemeBlueprints(themeId);
   const user: User = {
     id: 'user-incomplete',
     displayName: 'Jordan',
     currentStreak: 4,
     selectedThemeId: themeId,
   };
-  const past = previousChallenges(themeId);
-  const statements = [
-    statement(user.id, past[0]!, 'I named the hard thing out loud.'),
-    statement(user.id, past[1]!, 'I kept the ten-minute promise.'),
-  ];
+
+  const past = PAST_DATES.map((date, index) => {
+    const blueprint = plan[index];
+    if (!blueprint) {
+      return null;
+    }
+    return challengeFromBlueprint(blueprint, date);
+  }).filter((item): item is Challenge => item !== null);
+
+  const todayBlueprint = plan[PAST_DATES.length];
+  const today = todayBlueprint
+    ? challengeFromBlueprint(todayBlueprint, MOCK_TODAY)
+    : null;
+
+  const statements = past.map((item) =>
+    statement(
+      user.id,
+      item,
+      getExampleStatement(item.id) ?? item.title,
+    ),
+  );
 
   return {
     personaId: 'incomplete',
     user,
     themes: MOCK_THEMES,
-    challenges: [...TODAY_CHALLENGES, ...past],
-    sessions: past.map((challenge, index) =>
-      completedSession(
+    challenges: today ? [...past, today] : past,
+    sessions: past.map((item, index) => {
+      const blueprint = getChallengeBlueprint(item.id);
+      return completedSession(
         user.id,
-        challenge,
+        item,
         statements[index]!.id,
-        pastMessages(`incomplete-${challenge.id}`),
-      ),
-    ),
+        blueprint
+          ? messagesFromBlueprint(blueprint, `incomplete-${item.id}`)
+          : [],
+      );
+    }),
     statements,
   };
 }
 
 function worldForComplete(): MockWorld {
   const themeId = 'theme-presence';
+  const plan = getThemeBlueprints(themeId);
   const user: User = {
     id: 'user-complete',
     displayName: 'Sam',
     currentStreak: 12,
     selectedThemeId: themeId,
   };
-  const today = TODAY_CHALLENGES.find((item) => item.themeId === themeId)!;
-  const past = previousChallenges(themeId);
-  const todayStatement = statement(user.id, today, MOCK_STATEMENT_TEXT);
-  const pastStatements = [
-    statement(user.id, past[0]!, 'I stayed with the feeling for one minute.'),
-    statement(user.id, past[1]!, 'I put the phone down before answering.'),
-  ];
-  const statements = [todayStatement, ...pastStatements];
+
+  const past = PAST_DATES.map((date, index) => {
+    const blueprint = plan[index];
+    if (!blueprint) {
+      return null;
+    }
+    return challengeFromBlueprint(blueprint, date);
+  }).filter((item): item is Challenge => item !== null);
+
+  const todayBlueprint = plan[PAST_DATES.length];
+  const today = todayBlueprint
+    ? challengeFromBlueprint(todayBlueprint, MOCK_TODAY)
+    : null;
+
+  const pastStatements = past.map((item) =>
+    statement(
+      user.id,
+      item,
+      getExampleStatement(item.id) ?? item.title,
+    ),
+  );
+  const todayStatement =
+    today && todayBlueprint
+      ? statement(user.id, today, todayBlueprint.exampleStatement)
+      : null;
+  const statements = todayStatement
+    ? [todayStatement, ...pastStatements]
+    : pastStatements;
+
+  const challenges = today ? [...past, today] : past;
 
   return {
     personaId: 'complete',
     user,
     themes: MOCK_THEMES,
-    challenges: [...TODAY_CHALLENGES, ...past],
+    challenges,
     sessions: [
-      completedSession(
-        user.id,
-        today,
-        todayStatement.id,
-        pastMessages(`complete-${today.id}`),
-      ),
-      ...past.map((challenge, index) =>
-        completedSession(
+      ...(today && todayStatement && todayBlueprint
+        ? [
+            completedSession(
+              user.id,
+              today,
+              todayStatement.id,
+              messagesFromBlueprint(todayBlueprint, `complete-${today.id}`),
+            ),
+          ]
+        : []),
+      ...past.map((item, index) => {
+        const blueprint = getChallengeBlueprint(item.id);
+        return completedSession(
           user.id,
-          challenge,
+          item,
           pastStatements[index]!.id,
-          pastMessages(`complete-${challenge.id}`),
-        ),
-      ),
+          blueprint ? messagesFromBlueprint(blueprint, `complete-${item.id}`) : [],
+        );
+      }),
     ],
     statements,
   };
@@ -256,11 +554,24 @@ export function getTodaysChallenge(
   if (!themeId) {
     return null;
   }
-  return (
-    world.challenges.find(
-      (challenge) => challenge.themeId === themeId && challenge.date === MOCK_TODAY,
-    ) ?? null
+
+  const datedToday = world.challenges.find(
+    (challenge) => challenge.themeId === themeId && challenge.date === MOCK_TODAY,
   );
+  if (datedToday) {
+    return datedToday;
+  }
+
+  const completedIds = new Set(
+    world.sessions
+      .filter((session) => session.status === 'completed')
+      .map((session) => session.challengeId),
+  );
+  const next = getThemeBlueprints(themeId).find(
+    (blueprint) => !completedIds.has(blueprint.id),
+  );
+
+  return next ? challengeFromBlueprint(next, MOCK_TODAY) : null;
 }
 
 export function getTodaysStatement(
@@ -307,32 +618,32 @@ export function getHomeState(world: MockWorld): HomeState {
 export function completeTodaysChallenge(world: MockWorld): MockWorld {
   const themeId = world.user.selectedThemeId;
   const today = getTodaysChallenge(world, themeId);
-  if (!themeId || !today || getTodaysStatement(world, today.id)) {
+  const blueprint = getChallengeBlueprint(today?.id);
+  if (!themeId || !today || !blueprint || getTodaysStatement(world, today.id)) {
     return world;
   }
 
-  const messages: ChallengeMessage[] = MOCK_CHALLENGE_TURNS.flatMap(
-    (turn, index) => [
-      {
-        id: `live-g-${index}`,
-        role: 'guide' as const,
-        text: turn.guideText,
-      },
-      {
-        id: `live-u-${index}`,
-        role: 'user' as const,
-        text: turn.userReply,
-      },
-    ],
-  );
+  const messages: ChallengeMessage[] = blueprint.turns.flatMap((turn, index) => [
+    {
+      id: `live-g-${index}`,
+      role: 'guide' as const,
+      text: turn.guideText,
+    },
+    {
+      id: `live-u-${index}`,
+      role: 'user' as const,
+      text: turn.userReply,
+    },
+  ]);
 
-  const nextStatement = statement(world.user.id, today, MOCK_STATEMENT_TEXT);
+  const nextStatement = statement(world.user.id, today, blueprint.exampleStatement);
   const nextSession = completedSession(
     world.user.id,
     today,
     nextStatement.id,
     messages,
   );
+  const hasChallenge = world.challenges.some((item) => item.id === today.id);
 
   return {
     ...world,
@@ -340,6 +651,7 @@ export function completeTodaysChallenge(world: MockWorld): MockWorld {
       ...world.user,
       currentStreak: world.user.currentStreak + 1,
     },
+    challenges: hasChallenge ? world.challenges : [today, ...world.challenges],
     statements: [nextStatement, ...world.statements],
     sessions: [nextSession, ...world.sessions],
   };

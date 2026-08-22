@@ -27,6 +27,7 @@ export type Challenge = {
   themeId: string;
   date: IsoDate;
   title: string;
+  prompt: string;
 };
 
 export type ChallengeMessageRole = 'guide' | 'user';
