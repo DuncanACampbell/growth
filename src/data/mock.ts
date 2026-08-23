@@ -17,7 +17,11 @@ export type PersonaId = 'new' | 'incomplete' | 'complete';
 
 export const THEME_DURATION_DAYS = 30;
 
-const EUR_PRICE = 3;
+export const THEME_SINGLE_PRICE_EUR = 3;
+export const THEME_BUNDLE_PRICE_EUR = 6;
+export const THEME_BUNDLE_CREDIT_COUNT = 2;
+
+const EUR_PRICE = THEME_SINGLE_PRICE_EUR;
 
 export const MOCK_THEMES: Theme[] = [
   {
@@ -114,11 +118,22 @@ export function getCatalogTheme(themeId: string | null | undefined): Theme | nul
   return MOCK_THEMES.find((item) => item.id === themeId) ?? null;
 }
 
+export function formatEuroPrice(amount: number): string {
+  return `€${amount}`;
+}
+
 export function formatThemePrice(theme: Theme): string {
   if (theme.currency === 'EUR') {
-    return `€${theme.price}`;
+    return formatEuroPrice(theme.price);
   }
   return `${theme.price} ${theme.currency}`;
+}
+
+export function remainingCreditsLabel(count: number): string {
+  if (count === 1) {
+    return 'You have 1 remaining credit';
+  }
+  return `You have ${count} remaining credits`;
 }
 
 /**
@@ -475,7 +490,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
       'new',
       today,
       { id: 'user-new', displayName: 'Alex', selectedThemeId: null },
-      { currentStreak: 0 },
+      { currentStreak: 0, themeCredits: 0 },
     );
   }
 
@@ -485,7 +500,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
       'incomplete',
       today,
       { id: 'user-incomplete', displayName: 'Jordan', selectedThemeId: themeId },
-      { currentStreak: 4 },
+      { currentStreak: 4, themeCredits: 0 },
       [
         {
           themeId,
@@ -506,7 +521,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
     'complete',
     today,
     { id: 'user-complete', displayName: 'Sam', selectedThemeId: themeId },
-    { currentStreak: 12, lastActivityDate: today },
+    { currentStreak: 12, lastActivityDate: today, themeCredits: 0 },
     [
       {
         themeId,

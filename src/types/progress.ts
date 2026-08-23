@@ -18,8 +18,12 @@ export type ThemeProgress = {
   lastCompletedAt?: IsoDate;
 };
 
-/** Global "showed up today" streak — not per-theme. */
+/**
+ * Account-level progress. Streak is "showed up today".
+ * `themeCredits` are prepaid unlocks from a bundle — not theme ownership.
+ */
 export type UserProgress = {
   currentStreak: number;
   lastActivityDate?: IsoDate;
+  themeCredits: number;
 };

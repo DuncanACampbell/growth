@@ -20,16 +20,30 @@ import {
   completeTodaysChallenge,
   loadThreeThemeScenario,
   resetAllProgress,
+  resetEntitlements as resetEntitlementsInWorld,
   resetStreak,
   resetTheme,
   selectTheme as selectThemeInWorld,
+  setThemeCredits as setThemeCreditsInWorld,
   setThemeDay,
   shiftThemeDay,
-  unlockTheme as unlockThemeInWorld,
+  unlockThemeWithBundlePurchase as unlockWithBundleInWorld,
+  unlockThemeWithCredit as unlockWithCreditInWorld,
+  unlockThemeWithSinglePurchase as unlockWithSingleInWorld,
 } from '@/data/progression';
 import { getLocalIsoDate } from '@/lib/calendar';
 
 const STORAGE_KEY = 'growth.mock-world.v1';
+
+function normalizeWorld(world: MockWorld): MockWorld {
+  return {
+    ...world,
+    userProgress: {
+      ...world.userProgress,
+      themeCredits: Math.max(0, world.userProgress.themeCredits ?? 0),
+    },
+  };
+}
 
 type MockSessionValue = {
   isReady: boolean;
@@ -41,7 +55,11 @@ type MockSessionValue = {
   signOut: () => void;
   previewPersona: (personaId: PersonaId) => void;
   selectTheme: (themeId: string) => void;
-  unlockTheme: (themeId: string) => void;
+  unlockThemeWithSinglePurchase: (themeId: string) => void;
+  unlockThemeWithBundlePurchase: (themeId: string) => void;
+  unlockThemeWithCredit: (themeId: string) => void;
+  setThemeCredits: (count: number) => void;
+  resetEntitlements: () => void;
   completeToday: (themeId?: string) => void;
   resetProgress: () => void;
   resetThemeProgress: (themeId: string) => void;
@@ -66,7 +84,7 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
         }
         const parsed = JSON.parse(raw) as MockWorld;
         if (parsed?.user && parsed.today && Array.isArray(parsed.themeProgress)) {
-          setWorld(parsed);
+          setWorld(normalizeWorld(parsed));
         }
       })
       .catch(() => {
@@ -113,8 +131,30 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
     setWorld((current) => (current ? selectThemeInWorld(current, themeId) : current));
   }, []);
 
-  const unlockTheme = useCallback((themeId: string) => {
-    setWorld((current) => (current ? unlockThemeInWorld(current, themeId) : current));
+  const unlockThemeWithSinglePurchase = useCallback((themeId: string) => {
+    setWorld((current) =>
+      current ? unlockWithSingleInWorld(current, themeId) : current,
+    );
+  }, []);
+
+  const unlockThemeWithBundlePurchase = useCallback((themeId: string) => {
+    setWorld((current) =>
+      current ? unlockWithBundleInWorld(current, themeId) : current,
+    );
+  }, []);
+
+  const unlockThemeWithCredit = useCallback((themeId: string) => {
+    setWorld((current) =>
+      current ? unlockWithCreditInWorld(current, themeId) : current,
+    );
+  }, []);
+
+  const setThemeCredits = useCallback((count: number) => {
+    setWorld((current) => (current ? setThemeCreditsInWorld(current, count) : current));
+  }, []);
+
+  const resetEntitlements = useCallback(() => {
+    setWorld((current) => (current ? resetEntitlementsInWorld(current) : current));
   }, []);
 
   const completeToday = useCallback((themeId?: string) => {
@@ -172,7 +212,11 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
       signOut,
       previewPersona,
       selectTheme,
-      unlockTheme,
+      unlockThemeWithSinglePurchase,
+      unlockThemeWithBundlePurchase,
+      unlockThemeWithCredit,
+      setThemeCredits,
+      resetEntitlements,
       completeToday,
       resetProgress,
       resetThemeProgress,
@@ -189,7 +233,11 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
       signOut,
       previewPersona,
       selectTheme,
-      unlockTheme,
+      unlockThemeWithSinglePurchase,
+      unlockThemeWithBundlePurchase,
+      unlockThemeWithCredit,
+      setThemeCredits,
+      resetEntitlements,
       completeToday,
       resetProgress,
       resetThemeProgress,

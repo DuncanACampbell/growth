@@ -9,6 +9,7 @@ import {
   getCompletedTodayChallenge,
   getHomeState,
   getPreviousCompletions,
+  getThemeCredits,
   getTodaysChallenge,
   getTodaysStatement,
   getWaitingThemeProgress,
@@ -30,6 +31,11 @@ export default function HomeScreen() {
     simulateNextDay,
     resetStreakProgress,
     loadThreeActiveThemes,
+    unlockThemeWithSinglePurchase,
+    unlockThemeWithBundlePurchase,
+    unlockThemeWithCredit,
+    setThemeCredits,
+    resetEntitlements,
   } = useMockSession();
 
   if (!isSignedIn || !world) {
@@ -84,6 +90,9 @@ export default function HomeScreen() {
             Streak
           </AppText>
           <AppText variant="subtitle">{world.userProgress.currentStreak}</AppText>
+          <AppText variant="caption" tone="muted">
+            Theme credits {getThemeCredits(world)}
+          </AppText>
         </View>
 
         {homeState === 'new' ? (
@@ -283,16 +292,64 @@ export default function HomeScreen() {
               Reset all progress
             </AppText>
           </Pressable>
+          <Pressable accessibilityRole="button" onPress={resetEntitlements}>
+            <AppText variant="body" tone="primary">
+              Reset purchases and credits
+            </AppText>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => setThemeCredits(0)}>
+            <AppText variant="body" tone="primary">
+              Set credits to 0
+            </AppText>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => setThemeCredits(1)}>
+            <AppText variant="body" tone="primary">
+              Set credits to 1
+            </AppText>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => setThemeCredits(2)}>
+            <AppText variant="body" tone="primary">
+              Set credits to 2
+            </AppText>
+          </Pressable>
           {lockedThemes.map((item) => (
-            <Pressable
-              key={`dev-purchase-${item.id}`}
-              accessibilityRole="button"
-              onPress={() => openPurchase(item.id)}
-            >
-              <AppText variant="body" tone="primary">
-                Open purchase — {item.name}
+            <View key={`dev-purchase-${item.id}`} style={{ gap: theme.spacing.xs }}>
+              <AppText variant="caption" tone="muted">
+                {item.name}
               </AppText>
-            </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => openPurchase(item.id)}
+              >
+                <AppText variant="body" tone="primary">
+                  Open purchase
+                </AppText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => unlockThemeWithSinglePurchase(item.id)}
+              >
+                <AppText variant="body" tone="primary">
+                  Simulate €3 purchase
+                </AppText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => unlockThemeWithBundlePurchase(item.id)}
+              >
+                <AppText variant="body" tone="primary">
+                  Simulate €6 bundle
+                </AppText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => unlockThemeWithCredit(item.id)}
+              >
+                <AppText variant="body" tone="primary">
+                  Unlock with one credit
+                </AppText>
+              </Pressable>
+            </View>
           ))}
           {owned.map((progress) => {
             const item = getTheme(world, progress.themeId);
@@ -325,14 +382,22 @@ export default function HomeScreen() {
                     Complete current session
                   </AppText>
                 </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => resetThemeProgress(progress.themeId)}
-                >
-                  <AppText variant="body" tone="primary">
-                    Reset to locked
-                  </AppText>
-                </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => resetThemeProgress(progress.themeId)}
+                  >
+                    <AppText variant="body" tone="primary">
+                      Reset to locked
+                    </AppText>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => unlockThemeWithCredit(progress.themeId)}
+                  >
+                    <AppText variant="body" tone="primary">
+                      Try credit unlock
+                    </AppText>
+                  </Pressable>
               </View>
             );
           })}
