@@ -48,7 +48,7 @@ export default function ThemePurchaseScreen() {
   }
 
   function afterUnlock() {
-    router.replace({ pathname: '/challenge', params: { themeId: selectedTheme.id } });
+    router.replace('/home');
   }
 
   function purchaseSingle() {
