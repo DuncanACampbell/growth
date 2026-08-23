@@ -48,6 +48,20 @@ export type ChallengeMessage = {
 
 export type ChallengeSessionStatus = 'in_progress' | 'completed';
 
+/**
+ * Internal notes from a completed conversation. Stored for later days.
+ * Not shown in the chat UI.
+ */
+export type SessionNotes = {
+  sessionSummary: string;
+  selfEsteemTriggers: string[];
+  recurringBeliefs: string[];
+  strengths: string[];
+  dailyExercise: string;
+  tomorrowFocus: string;
+  importantMemory: string;
+};
+
 /** A user's attempt at a challenge, including the guided exchange. */
 export type ChallengeSession = {
   id: string;
@@ -56,6 +70,7 @@ export type ChallengeSession = {
   status: ChallengeSessionStatus;
   messages: ChallengeMessage[];
   statementId: string | null;
+  notes: SessionNotes | null;
 };
 
 /** The sentence produced when a challenge is completed. */

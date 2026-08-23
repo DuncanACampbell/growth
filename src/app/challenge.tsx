@@ -105,7 +105,7 @@ export default function ChallengeScreen() {
         }}
       >
         <AppText variant="title">
-          {showCompletion ? 'Today’s statement' : 'Today’s challenge'}
+          {showCompletion ? 'Today’s notice' : 'Today’s challenge'}
         </AppText>
         <AppText variant="body" tone="muted">
           {todaysChallenge.prompt}
@@ -123,7 +123,7 @@ export default function ChallengeScreen() {
             }}
           >
             <AppText variant="caption" tone="muted">
-              Statement of the day
+              Today’s notice
             </AppText>
             <AppText variant="subtitle">
               {todaysStatement?.text ??

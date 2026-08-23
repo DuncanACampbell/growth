@@ -1,5 +1,7 @@
 import type { Programme } from '@/types/programme';
 
+import { SELF_ESTEEM_DAY_01_GUIDE } from '@/data/programmes/self-esteem-day-01-guide';
+
 /** Source of truth for the Building Self-Esteem programme (7 daily sessions). */
 export const SELF_ESTEEM_PROGRAMME: Programme = {
   id: 'self-esteem',
@@ -11,28 +13,30 @@ export const SELF_ESTEEM_PROGRAMME: Programme = {
     {
       id: "self-esteem-01",
       day: 1,
-      concept: "The Inner Critic",
+      concept: "How your self-esteem works",
 
       objective:
-        "Help the user recognise when self-judgment is influencing how they interpret themselves or a situation.",
+        "Understand how the user currently feels about themselves, where their self-worth tends to drop, what influences it, one recurring belief, and one quality they already value. Do not try to fix everything today.",
 
       opening:
-        "Think of a recent moment when you felt disappointed in yourself, embarrassed, inadequate, rejected, or not good enough. What happened?",
+        "When you think about your self-esteem lately, does it generally feel pretty solid, or does it get knocked around quite easily?",
 
       explorationGoal:
-        "Understand how the user interpreted the experience and what made it emotionally significant.",
+        "Learn how the user currently feels about themselves and the situations where confidence or self-worth tends to drop. Notice whether other people's opinions, comparison, achievement, appearance, relationships, work, or something else has a strong influence.",
 
       beliefGoal:
-        "Help uncover what the user concluded or feared the experience said about them as a person.",
+        "Identify one recurring thought or belief that may be affecting their self-esteem.",
 
       reframeGoal:
-        "Help distinguish the event itself from the self-critical meaning attached to it. Explore alternative interpretations without dismissing legitimate disappointment or responsibility.",
+        "Gently challenge an assumption if it helps, without arguing or replacing it with artificial positivity. The aim is slightly more clarity, not a solved self-image.",
 
       applicationGoal:
-        "Help the user decide how they would like to respond when similar self-critical thoughts appear again.",
+        "Leave the user with one very small observation exercise: a single concise, memorable phrase they can use as a mantra for the rest of the day. It should take little or no extra time.",
 
       anchorGoal:
-        "Create a short statement based on the user's insight that reinforces their ability to notice self-judgment without automatically treating it as truth."
+        "Close naturally so tomorrow's conversation can continue from today, rather than starting again from scratch.",
+
+      guidePrompt: SELF_ESTEEM_DAY_01_GUIDE,
     },
 
     {

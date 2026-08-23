@@ -14,6 +14,8 @@ export type DailySession = {
   reframeGoal: string;
   applicationGoal: string;
   anchorGoal: string;
+  /** Full conversational brief for a future LLM. Not shown in the UI. */
+  guidePrompt?: string;
 };
 
 export type Programme = {

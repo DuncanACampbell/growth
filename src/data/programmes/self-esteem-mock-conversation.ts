@@ -1,3 +1,5 @@
+import type { SessionNotes } from '@/types/models';
+
 /**
  * Disposable prototype transcripts. A future LLM should ignore this file
  * and use DailySession goals instead. Turns are 3-5 beats, not one per milestone.
@@ -5,6 +7,7 @@
 export type MockSessionConversation = {
   turns: { guideText: string; userReply: string }[];
   exampleStatement: string;
+  sessionNotes?: SessionNotes;
 };
 
 export const SELF_ESTEEM_MOCK_CONVERSATIONS: Record<string, MockSessionConversation> = {
@@ -12,26 +15,59 @@ export const SELF_ESTEEM_MOCK_CONVERSATIONS: Record<string, MockSessionConversat
     turns: [
       {
         guideText:
-          'Think of a recent moment when you felt disappointed in yourself, embarrassed, inadequate, rejected, or not good enough. What happened?',
+          'When you think about your self-esteem lately, does it generally feel pretty solid, or does it get knocked around quite easily?',
         userReply:
-          'I snapped at a colleague in a meeting and then replayed it all afternoon.',
-      },
-      {
-        guideText: 'What did that moment make you believe about yourself?',
-        userReply: 'That I cannot keep it together when it counts.',
+          'Knocked around, honestly. A good morning can fall apart after one awkward conversation.',
       },
       {
         guideText:
-          'If you separate what happened from what you made it mean about you, what is left?',
+          'So it can turn quite quickly. When it drops, what tends to be happening — work, other people, how you look, how you measure yourself against someone else?',
         userReply:
-          'I made a sharp comment. That is disappointing. It does not mean I am incompetent.',
+          'Mostly other people. If someone seems unimpressed, or I see a colleague handling something better than I would, I shrink.',
       },
       {
-        guideText: 'When that critic shows up again, how do you want to meet it?',
-        userReply: 'Pause and ask whether I am describing the event or attacking myself.',
+        guideText:
+          'Other people and comparison. When you shrink, is there a thought that shows up almost on cue?',
+        userReply:
+          "That I'm behind. That they can tell I don't quite belong at this level.",
+      },
+      {
+        guideText:
+          '“I don’t belong at this level” is a heavy sentence to carry into a meeting. Is there anything about yourself you still quietly trust, even on those days?',
+        userReply:
+          "I'm reliable. I do the work. People can count on me even when I feel like a fraud.",
+      },
+      {
+        guideText:
+          'So the drop often comes after other people’s reactions or a comparison, and the story is that you are behind — even though you already know you are someone people can count on. For the rest of today: notice the drop. Don’t fix it. Just catch what happened immediately before.',
+        userReply: 'I can do that. Just notice the moment before I shrink.',
+      },
+      {
+        guideText:
+          'That’s enough for Day 1. Tomorrow we can look more closely at that “I’m behind” thought — where it came from, and what it leaves out.',
+        userReply: 'Okay. I’ll see you tomorrow.',
       },
     ],
-    exampleStatement: 'A harsh moment is not a verdict on who I am.',
+    exampleStatement: 'Notice the drop — and what happened just before.',
+    sessionNotes: {
+      sessionSummary:
+        'Self-esteem feels unstable and can collapse after one awkward interaction. It is strongly tied to other people’s reactions and comparison with colleagues. A recurring belief is that they are behind and do not belong at this level, even while they recognise they are reliable and people can count on them.',
+      selfEsteemTriggers: [
+        'Awkward conversations',
+        'Feeling unimpressed reactions from others',
+        'Comparing with colleagues who seem more capable',
+      ],
+      recurringBeliefs: [
+        "I'm behind",
+        "They can tell I don't quite belong at this level",
+      ],
+      strengths: ['Reliability', 'People can count on them', 'They still show up and do the work'],
+      dailyExercise: 'Notice the drop — and what happened just before.',
+      tomorrowFocus:
+        'The belief of being behind / not belonging, and what evidence that story leaves out.',
+      importantMemory:
+        'Confidence often falls after other people or comparison; they already value being reliable.',
+    },
   },
   'self-esteem-02': {
     turns: [
@@ -171,3 +207,10 @@ export const SELF_ESTEEM_MOCK_CONVERSATIONS: Record<string, MockSessionConversat
     exampleStatement: 'Self-respect is a behaviour I can practise before I feel ready.',
   },
 };
+
+export function getMockSessionNotes(challengeId: string | null | undefined): SessionNotes | null {
+  if (!challengeId) {
+    return null;
+  }
+  return SELF_ESTEEM_MOCK_CONVERSATIONS[challengeId]?.sessionNotes ?? null;
+}

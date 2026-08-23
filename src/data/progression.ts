@@ -7,6 +7,7 @@ import {
   getExampleStatement,
   type MockWorld,
 } from '@/data/mock';
+import { getMockSessionNotes } from '@/data/programmes/self-esteem-mock-conversation';
 import { addCalendarDays, compareIsoDates, isIsoDateOnOrBefore, isSameIsoDate } from '@/lib/calendar';
 import type {
   Challenge,
@@ -344,12 +345,13 @@ export function completeThemeSession(world: MockWorld, themeId: string): MockWor
     },
   ]);
 
+  const notes = getMockSessionNotes(todayChallenge.id);
   const nextStatement: StatementOfTheDay = {
     id: `statement-${world.user.id}-${todayChallenge.id}`,
     userId: world.user.id,
     challengeId: todayChallenge.id,
     date: world.today,
-    text: getExampleStatement(todayChallenge.id) ?? todayChallenge.title,
+    text: notes?.dailyExercise ?? getExampleStatement(todayChallenge.id) ?? todayChallenge.title,
   };
   const nextSession = {
     id: `session-${world.user.id}-${todayChallenge.id}`,
@@ -358,6 +360,7 @@ export function completeThemeSession(world: MockWorld, themeId: string): MockWor
     status: 'completed' as const,
     messages,
     statementId: nextStatement.id,
+    notes,
   };
 
   const finishedProgramme = progress.currentDay >= THEME_DURATION_DAYS;
