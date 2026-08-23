@@ -28,6 +28,8 @@ export type Challenge = {
   date: IsoDate;
   title: string;
   prompt: string;
+  day: number;
+  totalDays: number;
 };
 
 export type ChallengeMessageRole = 'guide' | 'user';

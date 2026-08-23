@@ -9,6 +9,10 @@ import type {
   Theme,
   User,
 } from '@/types/models';
+import type { DailySession, Programme } from '@/types/programme';
+
+import { SELF_ESTEEM_MOCK_CONVERSATIONS } from '@/data/programmes/self-esteem-mock-conversation';
+import { SELF_ESTEEM_PROGRAMME } from '@/data/programmes/self-esteem';
 
 export type PersonaId = 'new' | 'incomplete' | 'complete';
 
@@ -19,9 +23,9 @@ const PAST_DATES: IsoDate[] = ['2026-08-19', '2026-08-20'];
 export const MOCK_THEMES: Theme[] = [
   {
     id: 'theme-presence',
-    name: 'Self Confidence',
+    name: 'Building Self-Esteem',
     description:
-      '30 daily challenges to help you reframe who you are and why you should love yourself.',
+      'A 7-day programme to notice self-judgment, test old beliefs, and practise self-respect.',
   },
   {
     id: 'theme-courage',
@@ -54,88 +58,72 @@ export type ChallengeBlueprint = {
   id: string;
   themeId: string;
   dayIndex: number;
+  totalDays: number;
   title: string;
   prompt: string;
   turns: ChallengeTurn[];
   exampleStatement: string;
 };
 
-export const MOCK_CHALLENGE_BLUEPRINTS: ChallengeBlueprint[] = [
-  {
-    id: 'challenge-presence-1',
-    themeId: 'theme-presence',
-    dayIndex: 1,
-    title: 'Count one win',
-    prompt: 'Find a recent moment you handled well, and let it count.',
-    turns: [
-      {
-        guideText:
-          'When did you recently handle something better than you usually give yourself credit for?',
-        userReply: 'I stayed calm when a meeting went off track this morning.',
-      },
-      {
-        guideText: 'What did you actually do in that moment?',
-        userReply: 'I asked one clarifying question instead of shutting down.',
-      },
-      {
-        guideText: 'What would you say to a friend who did that?',
-        userReply: 'That is someone who can keep their head.',
-      },
-      {
-        guideText: 'Write one sentence that gives yourself the same credit.',
-        userReply: 'I keep my head when things get messy.',
-      },
-    ],
-    exampleStatement: 'I keep my head when things get messy.',
-  },
-  {
-    id: 'challenge-presence-2',
-    themeId: 'theme-presence',
-    dayIndex: 2,
-    title: 'Catch the critic',
-    prompt: 'Notice one harsh thought and rewrite it into something fair.',
-    turns: [
-      {
-        guideText: 'What critical sentence about yourself showed up today?',
-        userReply: 'I told myself I always freeze when it matters.',
-      },
-      {
-        guideText: 'Is that sentence fully true, or just loud?',
-        userReply: 'It is loud. I have handled hard things before.',
-      },
-      {
-        guideText: 'What is a fairer sentence that still tells the truth?',
-        userReply: 'I get nervous, and I can still take the next step.',
-      },
-    ],
-    exampleStatement: 'I get nervous, and I can still take the next step.',
-  },
-  {
-    id: 'challenge-presence-3',
-    themeId: 'theme-presence',
-    dayIndex: 3,
-    title: 'Let a compliment land',
-    prompt: 'Practise receiving credit instead of batting it away.',
-    turns: [
-      {
-        guideText: 'What is a compliment you recently deflected?',
-        userReply: 'Someone said I explained the work clearly.',
-      },
-      {
-        guideText: 'What made you want to shrink it?',
-        userReply: 'I felt like they were just being nice.',
-      },
-      {
-        guideText: 'If you let it be true for ten seconds, what is true?',
-        userReply: 'I did make the work easier to understand.',
-      },
-      {
-        guideText: 'Say that as a statement you can keep today.',
-        userReply: 'I make complicated things easier to understand.',
-      },
-    ],
-    exampleStatement: 'I make complicated things easier to understand.',
-  },
+const PROGRAMMES: Programme[] = [SELF_ESTEEM_PROGRAMME];
+
+export function getProgrammeForTheme(themeId: string): Programme | null {
+  return PROGRAMMES.find((item) => item.themeId === themeId) ?? null;
+}
+
+export function getDailySession(
+  sessionId: string | null | undefined,
+): DailySession | null {
+  if (!sessionId) {
+    return null;
+  }
+  for (const programme of PROGRAMMES) {
+    const session = programme.sessions.find((item) => item.id === sessionId);
+    if (session) {
+      return session;
+    }
+  }
+  return null;
+}
+
+function progressLabel(day: number, totalDays: number): string {
+  return `Day ${day} of ${totalDays}`;
+}
+
+function blueprintFromSession(
+  session: DailySession,
+  programme: Programme,
+): ChallengeBlueprint {
+  const mock = SELF_ESTEEM_MOCK_CONVERSATIONS[session.id];
+  const label = progressLabel(session.day, programme.durationDays);
+  return {
+    id: session.id,
+    themeId: programme.themeId,
+    dayIndex: session.day,
+    totalDays: programme.durationDays,
+    title: label,
+    prompt: label,
+    turns: mock?.turns ?? [{ guideText: session.opening, userReply: '' }],
+    exampleStatement: mock?.exampleStatement ?? '',
+  };
+}
+
+function catalogBlueprintsForTheme(themeId: string): ChallengeBlueprint[] {
+  const programme = getProgrammeForTheme(themeId);
+  if (programme) {
+    return programme.sessions
+      .slice()
+      .sort((a, b) => a.day - b.day)
+      .map((session) => blueprintFromSession(session, programme));
+  }
+
+  const list = MOCK_CHALLENGE_BLUEPRINTS.filter((item) => item.themeId === themeId).sort(
+    (a, b) => a.dayIndex - b.dayIndex,
+  );
+  return list.map((item) => ({ ...item, totalDays: list.length }));
+}
+
+const MOCK_CHALLENGE_BLUEPRINTS: Omit<ChallengeBlueprint, 'totalDays'>[] = [
   {
     id: 'challenge-courage-1',
     themeId: 'theme-courage',
@@ -301,13 +289,17 @@ export function getChallengeBlueprint(
   if (!challengeId) {
     return null;
   }
-  return MOCK_CHALLENGE_BLUEPRINTS.find((item) => item.id === challengeId) ?? null;
+  for (const theme of MOCK_THEMES) {
+    const match = catalogBlueprintsForTheme(theme.id).find((item) => item.id === challengeId);
+    if (match) {
+      return match;
+    }
+  }
+  return null;
 }
 
 export function getThemeBlueprints(themeId: string): ChallengeBlueprint[] {
-  return MOCK_CHALLENGE_BLUEPRINTS.filter((item) => item.themeId === themeId).sort(
-    (a, b) => a.dayIndex - b.dayIndex,
-  );
+  return catalogBlueprintsForTheme(themeId);
 }
 
 const EMPTY_TURNS: ChallengeTurn[] = [];
@@ -332,6 +324,8 @@ function challengeFromBlueprint(
     date,
     title: blueprint.title,
     prompt: blueprint.prompt,
+    day: blueprint.dayIndex,
+    totalDays: blueprint.totalDays,
   };
 }
 
