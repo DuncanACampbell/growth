@@ -35,6 +35,14 @@ yarn-error.*
 .env.*
 !.env.example
 
+# Firebase
+.firebase/
+.firebaserc
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log
+functions/lib/
+
 # typescript
 *.tsbuildinfo
 

@@ -1,10 +1,18 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
-import { getExampleStatement, getGuidedTurns } from '@/data/mock';
+import { SelfEsteemDay1Chat } from '@/components/SelfEsteemDay1Chat';
+import { getDailySession, getExampleStatement, getGuidedTurns } from '@/data/mock';
 import {
   didCompleteThemeToday,
   getHomeState,
@@ -76,6 +84,10 @@ export default function ChallengeScreen() {
   }
 
   const showCompletion = alreadyComplete;
+  const isSelfEsteemDay1 = todaysChallenge?.id === 'self-esteem-01';
+  const selfEsteemDay1 = isSelfEsteemDay1
+    ? getDailySession(todaysChallenge.id)
+    : null;
 
   function sendMockReply() {
     const current = guidedTurns[turnIndex];
@@ -93,6 +105,44 @@ export default function ChallengeScreen() {
 
     setTurnIndex((index) => index + 1);
     setAwaitingReply(true);
+  }
+
+  if (selfEsteemDay1 && !showCompletion) {
+    return (
+      <Screen>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.fill}
+        >
+          <View
+            style={{
+              gap: theme.spacing.lg,
+              paddingHorizontal: theme.spacing.xl,
+              paddingTop: theme.spacing.lg,
+            }}
+          >
+            <AppText variant="title">Today’s challenge</AppText>
+            <AppText variant="body" tone="muted">
+              {todaysChallenge.prompt}
+            </AppText>
+          </View>
+          <View
+            style={[
+              styles.fill,
+              {
+                paddingHorizontal: theme.spacing.xl,
+                paddingVertical: theme.spacing.lg,
+              },
+            ]}
+          >
+            <SelfEsteemDay1Chat
+              opening={selfEsteemDay1.opening}
+              sessionId={todaysChallenge.id}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </Screen>
+    );
   }
 
   return (
@@ -211,5 +261,8 @@ export default function ChallengeScreen() {
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
+  },
+  fill: {
+    flex: 1,
   },
 });

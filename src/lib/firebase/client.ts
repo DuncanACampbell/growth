@@ -2,6 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
 import * as FirebaseAuth from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import {
+  connectFunctionsEmulator,
+  getFunctions,
+  type Functions,
+} from 'firebase/functions';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 
@@ -30,6 +35,7 @@ function getReactNativePersistence(
 let auth: Auth | undefined;
 let firestore: Firestore | undefined;
 let storage: FirebaseStorage | undefined;
+let functions: Functions | undefined;
 
 function requireApp(): FirebaseApp {
   const config = getFirebaseClientConfig();
@@ -86,4 +92,38 @@ export function getFirebaseStorage(): FirebaseStorage {
     storage = getStorage(requireApp());
   }
   return storage;
+}
+
+function emulatorHostAndPort(): { host: string; port: number } | null {
+  const raw = process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST?.trim();
+  if (!raw) {
+    return null;
+  }
+  const [host, portRaw] = raw.split(':');
+  if (!host) {
+    return null;
+  }
+  const port = Number(portRaw ?? '5001');
+  if (!Number.isFinite(port)) {
+    return null;
+  }
+  return { host, port };
+}
+
+/** Callable Cloud Functions. Optional emulator via EXPO_PUBLIC_FIREBASE_EMULATOR_HOST. */
+export function getFirebaseFunctions(): Functions {
+  if (functions) {
+    return functions;
+  }
+
+  const region =
+    process.env.EXPO_PUBLIC_FIREBASE_FUNCTIONS_REGION?.trim() || 'us-central1';
+  functions = getFunctions(requireApp(), region);
+
+  const emulator = emulatorHostAndPort();
+  if (__DEV__ && emulator) {
+    connectFunctionsEmulator(functions, emulator.host, emulator.port);
+  }
+
+  return functions;
 }
