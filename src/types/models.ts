@@ -2,13 +2,12 @@
 export type IsoDate = string;
 
 /**
- * The signed-in person. Streak and selected theme are enough for home-screen
- * states; auth details stay out until Firebase is wired up.
+ * The signed-in person. Theme progress and streak live beside the user,
+ * not as a single selected-theme pointer.
  */
 export type User = {
   id: string;
   displayName: string;
-  currentStreak: number;
   selectedThemeId: string | null;
 };
 

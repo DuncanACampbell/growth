@@ -1,16 +1,16 @@
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
+import { getExampleStatement, getGuidedTurns } from '@/data/mock';
 import {
-  getExampleStatement,
-  getGuidedTurns,
+  didCompleteThemeToday,
   getHomeState,
   getTodaysChallenge,
   getTodaysStatement,
-} from '@/data/mock';
+} from '@/data/progression';
 import { useMockSession } from '@/lib/mock-session';
 import { useTheme } from '@/theme';
 import type { ChallengeMessage } from '@/types/models';
@@ -18,13 +18,16 @@ import type { ChallengeMessage } from '@/types/models';
 export default function ChallengeScreen() {
   const theme = useTheme();
   const { isSignedIn, world, completeToday } = useMockSession();
+  const { themeId: themeIdParam } = useLocalSearchParams<{ themeId?: string }>();
   const [turnIndex, setTurnIndex] = useState(0);
   const [awaitingReply, setAwaitingReply] = useState(true);
 
-  const todaysChallenge = world
-    ? getTodaysChallenge(world, world.user.selectedThemeId)
-    : null;
-  const alreadyComplete = world ? getHomeState(world) === 'challenge_complete' : false;
+  const themeId =
+    (typeof themeIdParam === 'string' && themeIdParam.length > 0
+      ? themeIdParam
+      : world?.user.selectedThemeId) ?? null;
+  const todaysChallenge = world ? getTodaysChallenge(world, themeId) : null;
+  const alreadyComplete = world && themeId ? didCompleteThemeToday(world, themeId) : false;
   const todaysStatement = world
     ? getTodaysStatement(world, todaysChallenge?.id ?? null)
     : null;
@@ -84,7 +87,7 @@ export default function ChallengeScreen() {
 
     const isLastTurn = turnIndex >= guidedTurns.length - 1;
     if (isLastTurn) {
-      completeToday();
+      completeToday(themeId ?? undefined);
       return;
     }
 

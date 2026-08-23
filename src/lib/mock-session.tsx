@@ -1,41 +1,104 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
 
 import {
-  completeTodaysChallenge,
   createMockWorld,
+  MOCK_THEMES,
   type MockWorld,
   type PersonaId,
 } from '@/data/mock';
+import {
+  advanceCalendarDay,
+  completeTodaysChallenge,
+  loadThreeThemeScenario,
+  resetAllProgress,
+  resetStreak,
+  resetTheme,
+  selectTheme as selectThemeInWorld,
+  setThemeDay,
+  shiftThemeDay,
+  unlockTheme as unlockThemeInWorld,
+} from '@/data/progression';
+import { getLocalIsoDate } from '@/lib/calendar';
+
+const STORAGE_KEY = 'growth.mock-world.v1';
 
 type MockSessionValue = {
+  isReady: boolean;
   isSignedIn: boolean;
   world: MockWorld | null;
+  catalogThemes: typeof MOCK_THEMES;
   signIn: (personaId?: PersonaId) => void;
   signUp: () => void;
   signOut: () => void;
   previewPersona: (personaId: PersonaId) => void;
   selectTheme: (themeId: string) => void;
-  completeToday: () => void;
+  unlockTheme: (themeId: string) => void;
+  completeToday: (themeId?: string) => void;
+  resetProgress: () => void;
+  resetThemeProgress: (themeId: string) => void;
+  setThemeDayNumber: (themeId: string, day: number) => void;
+  simulateNextDay: () => void;
+  resetStreakProgress: () => void;
+  loadThreeActiveThemes: () => void;
 };
 
 const MockSessionContext = createContext<MockSessionValue | null>(null);
 
 export function MockSessionProvider({ children }: { children: ReactNode }) {
   const [world, setWorld] = useState<MockWorld | null>(null);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((raw) => {
+        if (cancelled || !raw) {
+          return;
+        }
+        const parsed = JSON.parse(raw) as MockWorld;
+        if (parsed?.user && parsed.today && Array.isArray(parsed.themeProgress)) {
+          setWorld(parsed);
+        }
+      })
+      .catch(() => {
+        // Ignore corrupt prototype storage and start fresh.
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsReady(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+    if (!world) {
+      void AsyncStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+    void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(world));
+  }, [isReady, world]);
 
   const signIn = useCallback((personaId: PersonaId = 'new') => {
-    setWorld(createMockWorld(personaId));
+    setWorld(createMockWorld(personaId, getLocalIsoDate()));
   }, []);
 
   const signUp = useCallback(() => {
-    setWorld(createMockWorld('new'));
+    setWorld(createMockWorld('new', getLocalIsoDate()));
   }, []);
 
   const signOut = useCallback(() => {
@@ -43,46 +106,102 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const previewPersona = useCallback((personaId: PersonaId) => {
-    setWorld(createMockWorld(personaId));
+    setWorld(createMockWorld(personaId, getLocalIsoDate()));
   }, []);
 
   const selectTheme = useCallback((themeId: string) => {
+    setWorld((current) => (current ? selectThemeInWorld(current, themeId) : current));
+  }, []);
+
+  const unlockTheme = useCallback((themeId: string) => {
+    setWorld((current) => (current ? unlockThemeInWorld(current, themeId) : current));
+  }, []);
+
+  const completeToday = useCallback((themeId?: string) => {
+    setWorld((current) =>
+      current ? completeTodaysChallenge(current, themeId) : current,
+    );
+  }, []);
+
+  const resetProgress = useCallback(() => {
+    setWorld((current) =>
+      current ? resetAllProgress(current, getLocalIsoDate()) : current,
+    );
+  }, []);
+
+  const resetThemeProgress = useCallback((themeId: string) => {
+    setWorld((current) => (current ? resetTheme(current, themeId) : current));
+  }, []);
+
+  const setThemeDayNumber = useCallback((themeId: string, day: number) => {
     setWorld((current) => {
       if (!current) {
         return current;
       }
-      return {
-        ...current,
-        user: {
-          ...current.user,
-          selectedThemeId: themeId,
-        },
-      };
+      const progress = current.themeProgress.find((item) => item.themeId === themeId);
+      if (!progress) {
+        return setThemeDay(current, themeId, day);
+      }
+      return shiftThemeDay(current, themeId, day - progress.currentDay);
     });
   }, []);
 
-  const completeToday = useCallback(() => {
-    setWorld((current) => (current ? completeTodaysChallenge(current) : current));
+  const simulateNextDay = useCallback(() => {
+    setWorld((current) => (current ? advanceCalendarDay(current) : current));
+  }, []);
+
+  const resetStreakProgress = useCallback(() => {
+    setWorld((current) => (current ? resetStreak(current) : current));
+  }, []);
+
+  const loadThreeActiveThemes = useCallback(() => {
+    setWorld((current) => {
+      const base = current ?? createMockWorld('new', getLocalIsoDate());
+      return loadThreeThemeScenario(base);
+    });
   }, []);
 
   const value = useMemo<MockSessionValue>(
     () => ({
+      isReady,
       isSignedIn: world !== null,
+      world,
+      catalogThemes: MOCK_THEMES,
+      signIn,
+      signUp,
+      signOut,
+      previewPersona,
+      selectTheme,
+      unlockTheme,
+      completeToday,
+      resetProgress,
+      resetThemeProgress,
+      setThemeDayNumber,
+      simulateNextDay,
+      resetStreakProgress,
+      loadThreeActiveThemes,
+    }),
+    [
+      isReady,
       world,
       signIn,
       signUp,
       signOut,
       previewPersona,
       selectTheme,
+      unlockTheme,
       completeToday,
-    }),
-    [world, signIn, signUp, signOut, previewPersona, selectTheme, completeToday],
+      resetProgress,
+      resetThemeProgress,
+      setThemeDayNumber,
+      simulateNextDay,
+      resetStreakProgress,
+      loadThreeActiveThemes,
+    ],
   );
 
   return (
-    <MockSessionContext.Provider value={value}>
-      {children}
-    </MockSessionContext.Provider>
+    <MockSessionContext.Provider value={value}>{children}</MockSessionContext.Provider>
   );
 }
 

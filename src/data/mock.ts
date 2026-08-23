@@ -1,31 +1,40 @@
 import type {
   Challenge,
-  ChallengeMessage,
   ChallengeSession,
-  CompletedChallenge,
-  HomeState,
   IsoDate,
   StatementOfTheDay,
   Theme,
   User,
 } from '@/types/models';
+import type { ThemeProgress, UserProgress } from '@/types/progress';
 import type { DailySession, Programme } from '@/types/programme';
 
 import { SELF_ESTEEM_MOCK_CONVERSATIONS } from '@/data/programmes/self-esteem-mock-conversation';
 import { SELF_ESTEEM_PROGRAMME } from '@/data/programmes/self-esteem';
+import { addCalendarDays } from '@/lib/calendar';
 
 export type PersonaId = 'new' | 'incomplete' | 'complete';
 
-export const MOCK_TODAY: IsoDate = '2026-08-21';
-
-const PAST_DATES: IsoDate[] = ['2026-08-19', '2026-08-20'];
+export const THEME_DURATION_DAYS = 30;
 
 export const MOCK_THEMES: Theme[] = [
   {
     id: 'theme-presence',
     name: 'Building Self-Esteem',
     description:
-      'A 7-day programme to notice self-judgment, test old beliefs, and practise self-respect.',
+      'A 30-day programme to notice self-judgment, test old beliefs, and practise self-respect.',
+  },
+  {
+    id: 'theme-jealousy',
+    name: 'Jealousy',
+    description:
+      'A 30-day programme for working with comparison, threat, and belonging without collapsing your worth.',
+  },
+  {
+    id: 'theme-work',
+    name: 'Confidence at Work',
+    description:
+      'A 30-day programme for speaking, contributing, and judging your work without using other people as the score.',
   },
   {
     id: 'theme-courage',
@@ -95,12 +104,12 @@ function blueprintFromSession(
   programme: Programme,
 ): ChallengeBlueprint {
   const mock = SELF_ESTEEM_MOCK_CONVERSATIONS[session.id];
-  const label = progressLabel(session.day, programme.durationDays);
+  const label = progressLabel(session.day, THEME_DURATION_DAYS);
   return {
     id: session.id,
     themeId: programme.themeId,
     dayIndex: session.day,
-    totalDays: programme.durationDays,
+    totalDays: THEME_DURATION_DAYS,
     title: label,
     prompt: label,
     turns: mock?.turns ?? [{ guideText: session.opening, userReply: '' }],
@@ -108,19 +117,49 @@ function blueprintFromSession(
   };
 }
 
+function placeholderBlueprint(themeId: string, day: number): ChallengeBlueprint {
+  const label = progressLabel(day, THEME_DURATION_DAYS);
+  return {
+    id: `${themeId}-day-${String(day).padStart(2, '0')}`,
+    themeId,
+    dayIndex: day,
+    totalDays: THEME_DURATION_DAYS,
+    title: label,
+    prompt: label,
+    turns: [
+      {
+        guideText: `This is a placeholder conversation for ${label}. What is one thing on your mind about this theme today?`,
+        userReply: 'I showed up and named one honest thing.',
+      },
+      {
+        guideText: 'What would it look like to treat that as enough for today?',
+        userReply: 'I can take one small next step without needing to feel finished.',
+      },
+    ],
+    exampleStatement: 'I can show up for this work one day at a time.',
+  };
+}
+
 function catalogBlueprintsForTheme(themeId: string): ChallengeBlueprint[] {
   const programme = getProgrammeForTheme(themeId);
-  if (programme) {
-    return programme.sessions
-      .slice()
-      .sort((a, b) => a.day - b.day)
-      .map((session) => blueprintFromSession(session, programme));
+  const authored = programme
+    ? programme.sessions
+        .slice()
+        .sort((a, b) => a.day - b.day)
+        .map((session) => blueprintFromSession(session, programme))
+    : MOCK_CHALLENGE_BLUEPRINTS.filter((item) => item.themeId === themeId).sort(
+        (a, b) => a.dayIndex - b.dayIndex,
+      );
+
+  const byDay = new Map<number, ChallengeBlueprint>();
+  for (const item of authored) {
+    byDay.set(item.dayIndex, { ...item, totalDays: THEME_DURATION_DAYS });
   }
 
-  const list = MOCK_CHALLENGE_BLUEPRINTS.filter((item) => item.themeId === themeId).sort(
-    (a, b) => a.dayIndex - b.dayIndex,
-  );
-  return list.map((item) => ({ ...item, totalDays: list.length }));
+  return Array.from({ length: THEME_DURATION_DAYS }, (_, index) => {
+    const day = index + 1;
+    return byDay.get(day) ?? placeholderBlueprint(themeId, day);
+  });
 }
 
 const MOCK_CHALLENGE_BLUEPRINTS: Omit<ChallengeBlueprint, 'totalDays'>[] = [
@@ -276,7 +315,10 @@ const MOCK_CHALLENGE_BLUEPRINTS: Omit<ChallengeBlueprint, 'totalDays'>[] = [
 
 export type MockWorld = {
   personaId: PersonaId;
+  today: IsoDate;
   user: User;
+  userProgress: UserProgress;
+  themeProgress: ThemeProgress[];
   themes: Theme[];
   challenges: Challenge[];
   sessions: ChallengeSession[];
@@ -302,6 +344,13 @@ export function getThemeBlueprints(themeId: string): ChallengeBlueprint[] {
   return catalogBlueprintsForTheme(themeId);
 }
 
+export function getBlueprintForThemeDay(
+  themeId: string,
+  day: number,
+): ChallengeBlueprint | null {
+  return getThemeBlueprints(themeId).find((item) => item.dayIndex === day) ?? null;
+}
+
 const EMPTY_TURNS: ChallengeTurn[] = [];
 
 export function getGuidedTurns(challengeId: string | null | undefined): ChallengeTurn[] {
@@ -314,7 +363,7 @@ export function getExampleStatement(
   return getChallengeBlueprint(challengeId)?.exampleStatement ?? null;
 }
 
-function challengeFromBlueprint(
+export function challengeFromBlueprint(
   blueprint: ChallengeBlueprint,
   date: IsoDate,
 ): Challenge {
@@ -329,209 +378,93 @@ function challengeFromBlueprint(
   };
 }
 
-function firstChallengeForEachTheme(): Challenge[] {
-  return MOCK_THEMES.flatMap((theme) => {
-    const first = getThemeBlueprints(theme.id)[0];
-    return first ? [challengeFromBlueprint(first, MOCK_TODAY)] : [];
-  });
-}
-
-function statement(
-  userId: string,
-  challenge: Challenge,
-  text: string,
-): StatementOfTheDay {
+function emptyWorld(
+  personaId: PersonaId,
+  today: IsoDate,
+  user: User,
+  userProgress: UserProgress,
+  themeProgress: ThemeProgress[] = [],
+): MockWorld {
   return {
-    id: `statement-${userId}-${challenge.id}`,
-    userId,
-    challengeId: challenge.id,
-    date: challenge.date,
-    text,
-  };
-}
-
-function completedSession(
-  userId: string,
-  challenge: Challenge,
-  statementId: string,
-  messages: ChallengeMessage[],
-): ChallengeSession {
-  return {
-    id: `session-${userId}-${challenge.id}`,
-    userId,
-    challengeId: challenge.id,
-    status: 'completed',
-    messages,
-    statementId,
-  };
-}
-
-function messagesFromBlueprint(
-  blueprint: ChallengeBlueprint,
-  prefix: string,
-): ChallengeMessage[] {
-  return blueprint.turns.flatMap((turn, index) => [
-    {
-      id: `${prefix}-g${index + 1}`,
-      role: 'guide' as const,
-      text: turn.guideText,
-    },
-    {
-      id: `${prefix}-u${index + 1}`,
-      role: 'user' as const,
-      text: turn.userReply,
-    },
-  ]);
-}
-
-function worldForNewUser(): MockWorld {
-  const user: User = {
-    id: 'user-new',
-    displayName: 'Alex',
-    currentStreak: 0,
-    selectedThemeId: null,
-  };
-
-  return {
-    personaId: 'new',
+    personaId,
+    today,
     user,
+    userProgress,
+    themeProgress,
     themes: MOCK_THEMES,
-    challenges: firstChallengeForEachTheme(),
+    challenges: [],
     sessions: [],
     statements: [],
   };
 }
 
-function worldForIncomplete(): MockWorld {
-  const themeId = 'theme-courage';
-  const plan = getThemeBlueprints(themeId);
-  const user: User = {
-    id: 'user-incomplete',
-    displayName: 'Jordan',
-    currentStreak: 4,
-    selectedThemeId: themeId,
-  };
-
-  const past = PAST_DATES.map((date, index) => {
-    const blueprint = plan[index];
-    if (!blueprint) {
-      return null;
-    }
-    return challengeFromBlueprint(blueprint, date);
-  }).filter((item): item is Challenge => item !== null);
-
-  const todayBlueprint = plan[PAST_DATES.length];
-  const today = todayBlueprint
-    ? challengeFromBlueprint(todayBlueprint, MOCK_TODAY)
-    : null;
-
-  const statements = past.map((item) =>
-    statement(
-      user.id,
-      item,
-      getExampleStatement(item.id) ?? item.title,
-    ),
-  );
-
-  return {
-    personaId: 'incomplete',
-    user,
-    themes: MOCK_THEMES,
-    challenges: today ? [...past, today] : past,
-    sessions: past.map((item, index) => {
-      const blueprint = getChallengeBlueprint(item.id);
-      return completedSession(
-        user.id,
-        item,
-        statements[index]!.id,
-        blueprint
-          ? messagesFromBlueprint(blueprint, `incomplete-${item.id}`)
-          : [],
-      );
-    }),
-    statements,
-  };
-}
-
-function worldForComplete(): MockWorld {
-  const themeId = 'theme-presence';
-  const plan = getThemeBlueprints(themeId);
-  const user: User = {
-    id: 'user-complete',
-    displayName: 'Sam',
-    currentStreak: 12,
-    selectedThemeId: themeId,
-  };
-
-  const past = PAST_DATES.map((date, index) => {
-    const blueprint = plan[index];
-    if (!blueprint) {
-      return null;
-    }
-    return challengeFromBlueprint(blueprint, date);
-  }).filter((item): item is Challenge => item !== null);
-
-  const todayBlueprint = plan[PAST_DATES.length];
-  const today = todayBlueprint
-    ? challengeFromBlueprint(todayBlueprint, MOCK_TODAY)
-    : null;
-
-  const pastStatements = past.map((item) =>
-    statement(
-      user.id,
-      item,
-      getExampleStatement(item.id) ?? item.title,
-    ),
-  );
-  const todayStatement =
-    today && todayBlueprint
-      ? statement(user.id, today, todayBlueprint.exampleStatement)
-      : null;
-  const statements = todayStatement
-    ? [todayStatement, ...pastStatements]
-    : pastStatements;
-
-  const challenges = today ? [...past, today] : past;
-
-  return {
-    personaId: 'complete',
-    user,
-    themes: MOCK_THEMES,
-    challenges,
-    sessions: [
-      ...(today && todayStatement && todayBlueprint
-        ? [
-            completedSession(
-              user.id,
-              today,
-              todayStatement.id,
-              messagesFromBlueprint(todayBlueprint, `complete-${today.id}`),
-            ),
-          ]
-        : []),
-      ...past.map((item, index) => {
-        const blueprint = getChallengeBlueprint(item.id);
-        return completedSession(
-          user.id,
-          item,
-          pastStatements[index]!.id,
-          blueprint ? messagesFromBlueprint(blueprint, `complete-${item.id}`) : [],
-        );
-      }),
-    ],
-    statements,
-  };
-}
-
-export function createMockWorld(personaId: PersonaId): MockWorld {
-  switch (personaId) {
-    case 'new':
-      return worldForNewUser();
-    case 'incomplete':
-      return worldForIncomplete();
-    case 'complete':
-      return worldForComplete();
+export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld {
+  if (personaId === 'new') {
+    return emptyWorld(
+      'new',
+      today,
+      { id: 'user-new', displayName: 'Alex', selectedThemeId: null },
+      { currentStreak: 0 },
+    );
   }
+
+  if (personaId === 'incomplete') {
+    const themeId = 'theme-courage';
+    return emptyWorld(
+      'incomplete',
+      today,
+      { id: 'user-incomplete', displayName: 'Jordan', selectedThemeId: themeId },
+      { currentStreak: 4 },
+      [
+        {
+          themeId,
+          purchasedAt: today,
+          currentDay: 3,
+          status: 'active',
+          currentSessionStatus: 'waiting',
+          currentSessionAvailableAt: today,
+        },
+      ],
+    );
+  }
+
+  const themeId = 'theme-presence';
+  const completedDay = 3;
+  const blueprint = getBlueprintForThemeDay(themeId, completedDay);
+  const world = emptyWorld(
+    'complete',
+    today,
+    { id: 'user-complete', displayName: 'Sam', selectedThemeId: themeId },
+    { currentStreak: 12, lastActivityDate: today },
+    [
+      {
+        themeId,
+        purchasedAt: today,
+        currentDay: completedDay + 1,
+        status: 'active',
+        currentSessionStatus: 'waiting',
+        currentSessionAvailableAt: addCalendarDays(today, 1),
+        lastCompletedAt: today,
+      },
+    ],
+  );
+  if (!blueprint) {
+    return world;
+  }
+  const challenge = challengeFromBlueprint(blueprint, today);
+  return {
+    ...world,
+    challenges: [challenge],
+    statements: [
+      {
+        id: `statement-${world.user.id}-${challenge.id}`,
+        userId: world.user.id,
+        challengeId: challenge.id,
+        date: today,
+        text: blueprint.exampleStatement,
+      },
+    ],
+  };
 }
 
 export function getTheme(world: MockWorld, themeId: string | null): Theme | null {
@@ -539,114 +472,4 @@ export function getTheme(world: MockWorld, themeId: string | null): Theme | null
     return null;
   }
   return world.themes.find((theme) => theme.id === themeId) ?? null;
-}
-
-export function getTodaysChallenge(
-  world: MockWorld,
-  themeId: string | null,
-): Challenge | null {
-  if (!themeId) {
-    return null;
-  }
-
-  const datedToday = world.challenges.find(
-    (challenge) => challenge.themeId === themeId && challenge.date === MOCK_TODAY,
-  );
-  if (datedToday) {
-    return datedToday;
-  }
-
-  const completedIds = new Set(
-    world.sessions
-      .filter((session) => session.status === 'completed')
-      .map((session) => session.challengeId),
-  );
-  const next = getThemeBlueprints(themeId).find(
-    (blueprint) => !completedIds.has(blueprint.id),
-  );
-
-  return next ? challengeFromBlueprint(next, MOCK_TODAY) : null;
-}
-
-export function getTodaysStatement(
-  world: MockWorld,
-  challengeId: string | null,
-): StatementOfTheDay | null {
-  if (!challengeId) {
-    return null;
-  }
-  return (
-    world.statements.find(
-      (item) => item.challengeId === challengeId && item.date === MOCK_TODAY,
-    ) ?? null
-  );
-}
-
-export function getPreviousCompletions(world: MockWorld): CompletedChallenge[] {
-  return world.statements
-    .filter((item) => item.date !== MOCK_TODAY)
-    .map((item) => {
-      const challenge = world.challenges.find(
-        (entry) => entry.id === item.challengeId,
-      );
-      if (!challenge) {
-        return null;
-      }
-      return { challenge, statement: item };
-    })
-    .filter((item): item is CompletedChallenge => item !== null)
-    .sort((a, b) => (a.challenge.date < b.challenge.date ? 1 : -1));
-}
-
-export function getHomeState(world: MockWorld): HomeState {
-  if (!world.user.selectedThemeId) {
-    return 'new';
-  }
-  const today = getTodaysChallenge(world, world.user.selectedThemeId);
-  if (!today || !getTodaysStatement(world, today.id)) {
-    return 'challenge_open';
-  }
-  return 'challenge_complete';
-}
-
-export function completeTodaysChallenge(world: MockWorld): MockWorld {
-  const themeId = world.user.selectedThemeId;
-  const today = getTodaysChallenge(world, themeId);
-  const blueprint = getChallengeBlueprint(today?.id);
-  if (!themeId || !today || !blueprint || getTodaysStatement(world, today.id)) {
-    return world;
-  }
-
-  const messages: ChallengeMessage[] = blueprint.turns.flatMap((turn, index) => [
-    {
-      id: `live-g-${index}`,
-      role: 'guide' as const,
-      text: turn.guideText,
-    },
-    {
-      id: `live-u-${index}`,
-      role: 'user' as const,
-      text: turn.userReply,
-    },
-  ]);
-
-  const nextStatement = statement(world.user.id, today, blueprint.exampleStatement);
-  const nextSession = completedSession(
-    world.user.id,
-    today,
-    nextStatement.id,
-    messages,
-  );
-  const hasChallenge = world.challenges.some((item) => item.id === today.id);
-
-  return {
-    ...world,
-    user: {
-      ...world.user,
-      currentStreak: world.user.currentStreak + 1,
-    },
-    challenges: hasChallenge ? world.challenges : [today, ...world.challenges],
-    statements: [nextStatement, ...world.statements],
-    sessions: [nextSession, ...world.sessions],
-  };
 }
