@@ -22,7 +22,6 @@ export default function HomeScreen() {
     isSignedIn,
     world,
     signOut,
-    unlockTheme,
     previewPersona,
     completeToday,
     resetProgress,
@@ -51,6 +50,10 @@ export default function HomeScreen() {
 
   function openChallenge(themeId: string) {
     router.push({ pathname: '/challenge', params: { themeId } });
+  }
+
+  function openPurchase(themeId: string) {
+    router.push({ pathname: '/theme-purchase', params: { themeId } });
   }
 
   function switchPersona(personaId: PersonaId) {
@@ -87,13 +90,13 @@ export default function HomeScreen() {
           <View style={{ gap: theme.spacing.md }}>
             <AppText variant="subtitle">Choose a theme</AppText>
             <AppText variant="body" tone="muted">
-              No theme unlocked yet. Pick one to start Day 1 immediately.
+              No theme unlocked yet. Pick one to see the programme and unlock it.
             </AppText>
             {MOCK_THEMES.map((item) => (
               <Pressable
                 key={item.id}
                 accessibilityRole="button"
-                onPress={() => unlockTheme(item.id)}
+                onPress={() => openPurchase(item.id)}
                 style={{
                   backgroundColor: theme.colors.surface,
                   borderColor: theme.colors.border,
@@ -246,7 +249,7 @@ export default function HomeScreen() {
               <Pressable
                 key={item.id}
                 accessibilityRole="button"
-                onPress={() => unlockTheme(item.id)}
+                onPress={() => openPurchase(item.id)}
               >
                 <AppText variant="body" tone="primary">
                   Unlock {item.name}
@@ -280,6 +283,17 @@ export default function HomeScreen() {
               Reset all progress
             </AppText>
           </Pressable>
+          {lockedThemes.map((item) => (
+            <Pressable
+              key={`dev-purchase-${item.id}`}
+              accessibilityRole="button"
+              onPress={() => openPurchase(item.id)}
+            >
+              <AppText variant="body" tone="primary">
+                Open purchase — {item.name}
+              </AppText>
+            </Pressable>
+          ))}
           {owned.map((progress) => {
             const item = getTheme(world, progress.themeId);
             return (
@@ -316,7 +330,7 @@ export default function HomeScreen() {
                   onPress={() => resetThemeProgress(progress.themeId)}
                 >
                   <AppText variant="body" tone="primary">
-                    Remove theme
+                    Reset to locked
                   </AppText>
                 </Pressable>
               </View>

@@ -11,13 +11,20 @@ export type User = {
   selectedThemeId: string | null;
 };
 
+export type ThemeCurrency = 'EUR';
+
 /**
  * A focus area the user works on — not the UI colour theme.
+ * `description` is the short purchase/card summary.
  */
 export type Theme = {
   id: string;
   name: string;
   description: string;
+  longDescription: string;
+  outcomes: string[];
+  price: number;
+  currency: ThemeCurrency;
 };
 
 /** One daily exercise, belonging to a theme and a calendar date. */

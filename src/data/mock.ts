@@ -17,38 +17,109 @@ export type PersonaId = 'new' | 'incomplete' | 'complete';
 
 export const THEME_DURATION_DAYS = 30;
 
+const EUR_PRICE = 3;
+
 export const MOCK_THEMES: Theme[] = [
   {
     id: 'theme-presence',
     name: 'Building Self-Esteem',
     description:
-      'A 30-day programme to notice self-judgment, test old beliefs, and practise self-respect.',
+      'Build a stronger, more balanced relationship with yourself through a short daily conversation.',
+    longDescription:
+      'Over 30 daily conversations, you’ll explore the beliefs, reactions and habits that shape how you see yourself. Each session helps you understand your experiences, question unhelpful assumptions and practise responding with greater self-respect.',
+    outcomes: [
+      'Recognise patterns that undermine your confidence',
+      'Question harsh or automatic beliefs about yourself',
+      'Depend less on other people’s approval',
+      'Respond to setbacks with greater perspective',
+      'Practise acting with more self-respect',
+    ],
+    price: EUR_PRICE,
+    currency: 'EUR',
   },
   {
     id: 'theme-jealousy',
     name: 'Jealousy',
     description:
-      'A 30-day programme for working with comparison, threat, and belonging without collapsing your worth.',
+      'Work with comparison, threat and belonging without collapsing your sense of worth.',
+    longDescription:
+      'Over 30 daily conversations, you’ll look at the situations that spark jealousy and the stories you tell yourself in those moments. Each session helps you notice comparison, stay connected to what you value, and practise responding without abandoning yourself.',
+    outcomes: [
+      'Notice the situations that trigger comparison',
+      'Separate a real concern from a story about your worth',
+      'Stay steadier when someone else seems ahead',
+      'Name what you actually want instead of spiralling',
+      'Practise returning to yourself after a jealous spike',
+    ],
+    price: EUR_PRICE,
+    currency: 'EUR',
   },
   {
     id: 'theme-work',
     name: 'Confidence at Work',
     description:
-      'A 30-day programme for speaking, contributing, and judging your work without using other people as the score.',
+      'Speak, contribute and judge your work without using other people as the score.',
+    longDescription:
+      'Over 30 daily conversations, you’ll explore how you show up at work — speaking, contributing, and measuring yourself. Each session helps you notice old performance habits, question unhelpful standards, and practise taking up space with more steadiness.',
+    outcomes: [
+      'See where you hold back or over-perform',
+      'Question standards that only exist to impress others',
+      'Speak up with less second-guessing',
+      'Judge your work on effort and honesty, not comparison',
+      'Practise contributing without waiting to feel ready',
+    ],
+    price: EUR_PRICE,
+    currency: 'EUR',
   },
   {
     id: 'theme-courage',
     name: 'Motivation',
     description:
-      'Feel a surge of energy for achieving your goals after doing our 30-day plan.',
+      'Reconnect with what matters to you and take the next honest step, one day at a time.',
+    longDescription:
+      'Over 30 daily conversations, you’ll look at what drains your energy, what you keep postponing, and what still matters. Each session helps you understand resistance, choose a smaller true next step, and practise moving without waiting for a perfect mood.',
+    outcomes: [
+      'Notice what actually drains or restores your energy',
+      'Name the goal underneath delay and self-criticism',
+      'Break work into a next step you can do today',
+      'Question the story that you have to feel ready first',
+      'Practise showing up even when motivation is thin',
+    ],
+    price: EUR_PRICE,
+    currency: 'EUR',
   },
   {
     id: 'theme-discipline',
     name: 'Body confidence',
     description:
-      'Looking in the mirror gets a lot easier with our plan for reinforcing your positive body beliefs',
+      'Build a kinder, more honest relationship with your body through a short daily conversation.',
+    longDescription:
+      'Over 30 daily conversations, you’ll explore the habits of checking, comparing and criticising your body. Each session helps you understand those reactions, question harsh appearance rules, and practise treating your body with more respect in ordinary moments.',
+    outcomes: [
+      'Notice body-checking and comparison as they happen',
+      'Question harsh rules about how you should look',
+      'Separate health or care from self-punishment',
+      'Respond to a difficult glance with more perspective',
+      'Practise relating to your body as a place you live, not a verdict',
+    ],
+    price: EUR_PRICE,
+    currency: 'EUR',
   },
 ];
+
+export function getCatalogTheme(themeId: string | null | undefined): Theme | null {
+  if (!themeId) {
+    return null;
+  }
+  return MOCK_THEMES.find((item) => item.id === themeId) ?? null;
+}
+
+export function formatThemePrice(theme: Theme): string {
+  if (theme.currency === 'EUR') {
+    return `€${theme.price}`;
+  }
+  return `${theme.price} ${theme.currency}`;
+}
 
 /**
  * One guided beat. `guideText` is what a future LLM would ask;
