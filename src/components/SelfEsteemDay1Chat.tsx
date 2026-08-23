@@ -16,9 +16,21 @@ import type { ChallengeMessage } from '@/types/models';
 type SelfEsteemDay1ChatProps = {
   opening: string;
   sessionId: string;
+  guidePrompt: string;
 };
 
-export function SelfEsteemDay1Chat({ opening, sessionId }: SelfEsteemDay1ChatProps) {
+function toLlmHistory(messages: ChallengeMessage[]) {
+  return messages.map((message) => ({
+    role: (message.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+    text: message.text,
+  }));
+}
+
+export function SelfEsteemDay1Chat({
+  opening,
+  sessionId,
+  guidePrompt,
+}: SelfEsteemDay1ChatProps) {
   const theme = useTheme();
   const [messages, setMessages] = useState<ChallengeMessage[]>([
     { id: 'opening', role: 'guide', text: opening },
@@ -42,6 +54,7 @@ export function SelfEsteemDay1Chat({ opening, sessionId }: SelfEsteemDay1ChatPro
       return;
     }
 
+    const history = toLlmHistory(messages);
     const userMessage: ChallengeMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -57,6 +70,8 @@ export function SelfEsteemDay1Chat({ opening, sessionId }: SelfEsteemDay1ChatPro
       const { reply } = await sendSelfEsteemMessage({
         message: text,
         sessionId,
+        guidePrompt,
+        history,
       });
       setMessages((current) => [
         ...current,

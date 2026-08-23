@@ -1,3 +1,5 @@
 node_modules/
 lib/
 *.local
+.secret.local
+secret.local

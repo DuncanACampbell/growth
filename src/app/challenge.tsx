@@ -138,6 +138,7 @@ export default function ChallengeScreen() {
             <SelfEsteemDay1Chat
               opening={selfEsteemDay1.opening}
               sessionId={todaysChallenge.id}
+              guidePrompt={selfEsteemDay1.guidePrompt ?? ''}
             />
           </View>
         </KeyboardAvoidingView>

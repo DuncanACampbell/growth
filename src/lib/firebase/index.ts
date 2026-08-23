@@ -8,6 +8,7 @@ export {
 } from './client';
 export { sendSelfEsteemMessage } from './self-esteem';
 export type {
+  SelfEsteemChatTurn,
   SendSelfEsteemMessageInput,
   SendSelfEsteemMessageResult,
 } from './self-esteem';

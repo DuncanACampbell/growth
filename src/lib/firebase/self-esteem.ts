@@ -2,9 +2,16 @@ import { httpsCallable } from 'firebase/functions';
 
 import { getFirebaseFunctions } from './client';
 
+export type SelfEsteemChatTurn = {
+  role: 'user' | 'assistant';
+  text: string;
+};
+
 export type SendSelfEsteemMessageInput = {
   message: string;
   sessionId?: string;
+  guidePrompt: string;
+  history: SelfEsteemChatTurn[];
 };
 
 export type SendSelfEsteemMessageResult = {
@@ -18,8 +25,12 @@ export async function sendSelfEsteemMessage(
   input: SendSelfEsteemMessageInput,
 ): Promise<SendSelfEsteemMessageResult> {
   const message = input.message.trim();
+  const guidePrompt = input.guidePrompt.trim();
   if (!message) {
     throw new Error('Write a message before sending.');
+  }
+  if (!guidePrompt) {
+    throw new Error('This session is missing its guide prompt.');
   }
 
   const callable = httpsCallable<
@@ -31,6 +42,8 @@ export async function sendSelfEsteemMessage(
     const result = await callable({
       message,
       sessionId: input.sessionId,
+      guidePrompt,
+      history: input.history,
     });
 
     const reply = result.data.reply?.trim();
