@@ -13,6 +13,7 @@ import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import { SelfEsteemDay1Chat } from '@/components/SelfEsteemDay1Chat';
 import { getDailySession, getExampleStatement, getGuidedTurns } from '@/data/mock';
+import { SELF_ESTEEM_PROGRAMME } from '@/data/programmes/self-esteem';
 import {
   didCompleteThemeToday,
   getHomeState,
@@ -136,9 +137,9 @@ export default function ChallengeScreen() {
             ]}
           >
             <SelfEsteemDay1Chat
-              opening={selfEsteemDay1.opening}
               sessionId={todaysChallenge.id}
-              guidePrompt={selfEsteemDay1.guidePrompt ?? ''}
+              themeId={SELF_ESTEEM_PROGRAMME.id}
+              exerciseId={todaysChallenge.id}
             />
           </View>
         </KeyboardAvoidingView>

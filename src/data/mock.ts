@@ -198,7 +198,10 @@ function blueprintFromSession(
     totalDays: THEME_DURATION_DAYS,
     title: label,
     prompt: label,
-    turns: mock?.turns ?? [{ guideText: session.opening, userReply: '' }],
+    turns: mock?.turns ?? [{
+      guideText: session.opening ?? '',
+      userReply: '',
+    }],
     exampleStatement: mock?.exampleStatement ?? '',
   };
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,14 +9,18 @@ import {
 } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
-import { isFirebaseConfigured, sendSelfEsteemMessage } from '@/lib/firebase';
+import {
+  getSelfEsteemExerciseOpening,
+  isFirebaseConfigured,
+  sendSelfEsteemMessage,
+} from '@/lib/firebase';
 import { useTheme } from '@/theme';
 import type { ChallengeMessage } from '@/types/models';
 
 type SelfEsteemDay1ChatProps = {
-  opening: string;
   sessionId: string;
-  guidePrompt: string;
+  themeId: string;
+  exerciseId: string;
 };
 
 function toLlmHistory(messages: ChallengeMessage[]) {
@@ -27,30 +31,54 @@ function toLlmHistory(messages: ChallengeMessage[]) {
 }
 
 export function SelfEsteemDay1Chat({
-  opening,
   sessionId,
-  guidePrompt,
+  themeId,
+  exerciseId,
 }: SelfEsteemDay1ChatProps) {
   const theme = useTheme();
-  const [messages, setMessages] = useState<ChallengeMessage[]>([
-    { id: 'opening', role: 'guide', text: opening },
-  ]);
+  const [messages, setMessages] = useState<ChallengeMessage[]>([]);
+  const [loadingOpening, setLoadingOpening] = useState(true);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSend = draft.trim().length > 0 && !sending;
+  const ready = messages.length > 0 && !loadingOpening;
+  const canSend = ready && draft.trim().length > 0 && !sending;
 
-  async function send() {
-    const text = draft.trim();
-    if (!text || sending) {
-      return;
-    }
-
+  async function loadOpening() {
     if (!isFirebaseConfigured()) {
       setError(
         'Firebase is not configured. Add EXPO_PUBLIC_FIREBASE_* values to .env.',
       );
+      setLoadingOpening(false);
+      return;
+    }
+
+    setLoadingOpening(true);
+    setError(null);
+    try {
+      const { opening } = await getSelfEsteemExerciseOpening({
+        themeId,
+        exerciseId,
+      });
+      setMessages([{ id: 'opening', role: 'guide', text: opening }]);
+    } catch (caught) {
+      setMessages([]);
+      setError(
+        caught instanceof Error ? caught.message : 'Could not load today’s opening.',
+      );
+    } finally {
+      setLoadingOpening(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadOpening();
+  }, [themeId, exerciseId]);
+
+  async function send() {
+    const text = draft.trim();
+    if (!text || sending || !ready) {
       return;
     }
 
@@ -69,8 +97,9 @@ export function SelfEsteemDay1Chat({
     try {
       const { reply } = await sendSelfEsteemMessage({
         message: text,
+        themeId,
+        exerciseId,
         sessionId,
-        guidePrompt,
         history,
       });
       setMessages((current) => [
@@ -98,6 +127,14 @@ export function SelfEsteemDay1Chat({
           paddingBottom: theme.spacing.md,
         }}
       >
+        {loadingOpening ? (
+          <View style={{ alignItems: 'center', flexDirection: 'row', gap: theme.spacing.sm }}>
+            <ActivityIndicator color={theme.colors.primary} />
+            <AppText variant="caption" tone="muted">
+              Loading…
+            </AppText>
+          </View>
+        ) : null}
         {messages.map((message) => (
           <View
             key={message.id}
@@ -142,44 +179,65 @@ export function SelfEsteemDay1Chat({
         </AppText>
       ) : null}
 
-      <View style={{ gap: theme.spacing.sm }}>
-        <TextInput
-          value={draft}
-          onChangeText={setDraft}
-          editable={!sending}
-          placeholder="Write a reply"
-          placeholderTextColor={theme.colors.textMuted}
-          multiline
-          style={{
-            borderColor: theme.colors.border,
-            borderRadius: theme.radii.md,
-            borderWidth: 1,
-            color: theme.colors.text,
-            minHeight: 48,
-            padding: theme.spacing.md,
-          }}
-        />
+      {!ready && !loadingOpening ? (
         <Pressable
           accessibilityRole="button"
-          disabled={!canSend}
           onPress={() => {
-            void send();
+            void loadOpening();
           }}
           style={[
             styles.button,
             {
-              backgroundColor: canSend ? theme.colors.primary : theme.colors.surface,
+              backgroundColor: theme.colors.primary,
               borderRadius: theme.radii.md,
-              opacity: canSend ? 1 : 0.6,
               padding: theme.spacing.md,
             },
           ]}
         >
-          <AppText variant="body" tone={canSend ? 'onPrimary' : 'muted'}>
-            {sending ? 'Sending…' : error ? 'Try again' : 'Send'}
+          <AppText variant="body" tone="onPrimary">
+            Try again
           </AppText>
         </Pressable>
-      </View>
+      ) : (
+        <View style={{ gap: theme.spacing.sm }}>
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            editable={!sending && ready}
+            placeholder="Write a reply"
+            placeholderTextColor={theme.colors.textMuted}
+            multiline
+            style={{
+              borderColor: theme.colors.border,
+              borderRadius: theme.radii.md,
+              borderWidth: 1,
+              color: theme.colors.text,
+              minHeight: 48,
+              padding: theme.spacing.md,
+            }}
+          />
+          <Pressable
+            accessibilityRole="button"
+            disabled={!canSend}
+            onPress={() => {
+              void send();
+            }}
+            style={[
+              styles.button,
+              {
+                backgroundColor: canSend ? theme.colors.primary : theme.colors.surface,
+                borderRadius: theme.radii.md,
+                opacity: canSend ? 1 : 0.6,
+                padding: theme.spacing.md,
+              },
+            ]}
+          >
+            <AppText variant="body" tone={canSend ? 'onPrimary' : 'muted'}>
+              {sending ? 'Sending…' : error ? 'Try again' : 'Send'}
+            </AppText>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }

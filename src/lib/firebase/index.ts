@@ -6,8 +6,10 @@ export {
   getFirebaseStorage,
   getFirestoreDb,
 } from './client';
-export { sendSelfEsteemMessage } from './self-esteem';
+export { getSelfEsteemExerciseOpening, sendSelfEsteemMessage } from './self-esteem';
 export type {
+  GetSelfEsteemExerciseOpeningInput,
+  GetSelfEsteemExerciseOpeningResult,
   SelfEsteemChatTurn,
   SendSelfEsteemMessageInput,
   SendSelfEsteemMessageResult,

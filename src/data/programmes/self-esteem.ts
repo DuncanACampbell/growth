@@ -1,7 +1,5 @@
 import type { Programme } from '@/types/programme';
 
-import { SELF_ESTEEM_DAY_01_GUIDE } from '@/data/programmes/self-esteem-day-01-guide';
-
 /** Source of truth for the Building Self-Esteem programme (7 daily sessions). */
 export const SELF_ESTEEM_PROGRAMME: Programme = {
   id: 'self-esteem',
@@ -13,13 +11,10 @@ export const SELF_ESTEEM_PROGRAMME: Programme = {
     {
       id: "self-esteem-01",
       day: 1,
-      concept: "How your self-esteem works",
+      concept: "The Harsher Judge",
 
       objective:
-        "Understand how the user currently feels about themselves, where their self-worth tends to drop, what influences it, one recurring belief, and one quality they already value. Do not try to fix everything today.",
-
-      opening:
-        "When you think about your self-esteem lately, does it generally feel pretty solid, or does it get knocked around quite easily?",
+        "Identify one part of yourself that you judge particularly harshly and begin recognising that this judgment is a perspective, not an objective fact.",
 
       explorationGoal:
         "Learn how the user currently feels about themselves and the situations where confidence or self-worth tends to drop. Notice whether other people's opinions, comparison, achievement, appearance, relationships, work, or something else has a strong influence.",
@@ -35,8 +30,6 @@ export const SELF_ESTEEM_PROGRAMME: Programme = {
 
       anchorGoal:
         "Close naturally so tomorrow's conversation can continue from today, rather than starting again from scratch.",
-
-      guidePrompt: SELF_ESTEEM_DAY_01_GUIDE,
     },
 
     {

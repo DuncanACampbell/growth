@@ -9,8 +9,9 @@ export type SelfEsteemChatTurn = {
 
 export type SendSelfEsteemMessageInput = {
   message: string;
+  themeId: string;
+  exerciseId: string;
   sessionId?: string;
-  guidePrompt: string;
   history: SelfEsteemChatTurn[];
 };
 
@@ -18,19 +19,62 @@ export type SendSelfEsteemMessageResult = {
   reply: string;
 };
 
+export type GetSelfEsteemExerciseOpeningInput = {
+  themeId: string;
+  exerciseId: string;
+};
+
+export type GetSelfEsteemExerciseOpeningResult = {
+  opening: string;
+};
+
 /**
- * Client entry for Self-Esteem Day 1. The UI should not know about LLM providers.
+ * User-facing opening for an exercise. Does not expose guide/prompt text.
+ */
+export async function getSelfEsteemExerciseOpening(
+  input: GetSelfEsteemExerciseOpeningInput,
+): Promise<GetSelfEsteemExerciseOpeningResult> {
+  const themeId = input.themeId.trim();
+  const exerciseId = input.exerciseId.trim();
+  if (!themeId || !exerciseId) {
+    throw new Error('This session is missing its exercise identity.');
+  }
+
+  const callable = httpsCallable<
+    GetSelfEsteemExerciseOpeningInput,
+    GetSelfEsteemExerciseOpeningResult
+  >(getFirebaseFunctions(), 'getSelfEsteemExerciseOpening');
+
+  try {
+    const result = await callable({ themeId, exerciseId });
+    const opening = result.data.opening?.trim();
+    if (!opening) {
+      throw new Error('The backend returned an empty opening.');
+    }
+    return { opening };
+  } catch (caught) {
+    if (caught instanceof Error && caught.message) {
+      throw caught;
+    }
+    throw new Error('Could not reach the Firebase backend.');
+  }
+}
+
+/**
+ * Client entry for Self-Esteem Day 1. The UI should not know about LLM providers
+ * or prompt text — Firebase loads the guides from the exercise identity.
  */
 export async function sendSelfEsteemMessage(
   input: SendSelfEsteemMessageInput,
 ): Promise<SendSelfEsteemMessageResult> {
   const message = input.message.trim();
-  const guidePrompt = input.guidePrompt.trim();
+  const themeId = input.themeId.trim();
+  const exerciseId = input.exerciseId.trim();
   if (!message) {
     throw new Error('Write a message before sending.');
   }
-  if (!guidePrompt) {
-    throw new Error('This session is missing its guide prompt.');
+  if (!themeId || !exerciseId) {
+    throw new Error('This session is missing its exercise identity.');
   }
 
   const callable = httpsCallable<
@@ -41,8 +85,9 @@ export async function sendSelfEsteemMessage(
   try {
     const result = await callable({
       message,
+      themeId,
+      exerciseId,
       sessionId: input.sessionId,
-      guidePrompt,
       history: input.history,
     });
 

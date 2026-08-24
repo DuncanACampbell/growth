@@ -8,14 +8,12 @@ export type DailySession = {
   day: number;
   concept: string;
   objective: string;
-  opening: string;
+  opening?: string;
   explorationGoal: string;
   beliefGoal: string;
   reframeGoal: string;
   applicationGoal: string;
   anchorGoal: string;
-  /** Full conversational brief for a future LLM. Not shown in the UI. */
-  guidePrompt?: string;
 };
 
 export type Programme = {
