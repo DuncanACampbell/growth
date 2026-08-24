@@ -90,6 +90,18 @@ export type StatementOfTheDay = {
   text: string;
 };
 
+/** Compact notes from a completed daily exercise. Not a transcript. */
+export type ProgrammeMemoryRecord = {
+  themeId: string;
+  exerciseId: string;
+  topic: string;
+  pattern: string;
+  reframe: string;
+  finalStatement: string;
+  memoryNote: string;
+  completedAt?: IsoDate;
+};
+
 export type HomeState = 'new' | 'challenge_open' | 'challenge_complete';
 
 export type CompletedChallenge = {

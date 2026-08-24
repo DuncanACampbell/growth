@@ -3,6 +3,10 @@ import { logger } from 'firebase-functions';
 
 import { assembleSystemPrompt } from './guides/assemble';
 import {
+  formatPreviousProgrammeMemory,
+  parseProgrammeMemoryList,
+} from './guides/programme-memory';
+import {
   getDailyExercise,
   getGlobalConversationGuide,
   getThemeGuide,
@@ -25,6 +29,7 @@ type SendSelfEsteemMessageRequest = {
   themeId?: unknown;
   exerciseId?: unknown;
   history?: unknown;
+  previousMemory?: unknown;
 };
 
 function parseHistory(value: unknown): LlmChatTurn[] {
@@ -92,6 +97,13 @@ export const sendSelfEsteemMessage = onCall(
     }
 
     const history = parseHistory(data.history);
+    let previousMemory = [];
+    try {
+      previousMemory = parseProgrammeMemoryList(data.previousMemory);
+    } catch (caught) {
+      const reason = caught instanceof Error ? caught.message : 'previousMemory is invalid.';
+      throw new HttpsError('invalid-argument', reason);
+    }
     const userTurnNumber = countUserTurns(history) + 1;
     if (userTurnNumber > MAX_USER_TURNS) {
       throw new HttpsError(
@@ -106,6 +118,7 @@ export const sendSelfEsteemMessage = onCall(
       themeGuide,
       exercise,
       pacing: pacingInstructions(userTurnNumber, mustComplete),
+      previousMemory: formatPreviousProgrammeMemory(previousMemory),
     });
 
     try {
@@ -122,6 +135,7 @@ export const sendSelfEsteemMessage = onCall(
         reply: result.reply,
         isComplete: result.isComplete,
         finalStatement: result.finalStatement,
+        memory: result.isComplete ? result.memory : null,
       };
     } catch (caught) {
       logger.error('Self-esteem LLM call failed.', {

@@ -1,3 +1,7 @@
+import {
+  fallbackProgrammeMemory,
+  type ProgrammeMemoryFields,
+} from './guides/programme-memory';
 import type { ConversationPhase } from './guides/types';
 import type { LlmChatTurn } from './llm';
 
@@ -8,6 +12,7 @@ export type GuidedSessionTurn = {
   phase: ConversationPhase;
   isComplete: boolean;
   finalStatement: string | null;
+  memory: ProgrammeMemoryFields | null;
 };
 
 export function countUserTurns(history: LlmChatTurn[]): number {
@@ -26,6 +31,7 @@ export function pacingInstructions(
 This is the FINAL user reply. You MUST close the session now.
 Set isComplete to true and phase to complete.
 Write a personalised finalStatement distilled from the user's own reframe and wording.
+Fill memory with topic, pattern, reframe, and memoryNote from this conversation.
 Do not ask a question.
 Do not introduce another issue.
 Summarise the useful shift, then close.`;
@@ -95,6 +101,7 @@ That’s it for today. Come back tomorrow.`.trim();
     phase: 'complete',
     isComplete: true,
     finalStatement,
+    memory: turn.memory ?? fallbackProgrammeMemory(finalStatement),
   };
 }
 

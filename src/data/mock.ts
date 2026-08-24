@@ -2,6 +2,7 @@ import type {
   Challenge,
   ChallengeSession,
   IsoDate,
+  ProgrammeMemoryRecord,
   StatementOfTheDay,
   Theme,
   ThemeStatus,
@@ -281,6 +282,7 @@ export type MockWorld = {
   challenges: Challenge[];
   sessions: ChallengeSession[];
   statements: StatementOfTheDay[];
+  programmeMemories: ProgrammeMemoryRecord[];
 };
 
 export function getChallengeBlueprint(
@@ -353,6 +355,7 @@ function emptyWorld(
     challenges: [],
     sessions: [],
     statements: [],
+    programmeMemories: [],
   };
 }
 

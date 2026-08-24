@@ -17,6 +17,7 @@ import { SELF_ESTEEM_PROGRAMME } from '@/data/programmes/self-esteem';
 import {
   didCompleteThemeToday,
   getHomeState,
+  getPriorProgrammeMemories,
   getTodaysChallenge,
   getTodaysStatement,
 } from '@/data/progression';
@@ -140,9 +141,31 @@ export default function ChallengeScreen() {
               sessionId={todaysChallenge.id}
               themeId={SELF_ESTEEM_PROGRAMME.id}
               exerciseId={todaysChallenge.id}
-              onComplete={(statement) => {
+              previousMemory={getPriorProgrammeMemories(
+                world,
+                SELF_ESTEEM_PROGRAMME.id,
+                todaysChallenge.id,
+              )}
+              onComplete={(statement, memory) => {
                 setKeepLiveChat(true);
-                completeToday(themeId ?? undefined, { finalStatement: statement });
+                const finalStatement =
+                  statement?.trim() || memory?.reframe || '';
+                completeToday(themeId ?? undefined, {
+                  finalStatement: statement,
+                  memory: {
+                    themeId: SELF_ESTEEM_PROGRAMME.id,
+                    exerciseId: todaysChallenge.id,
+                    topic: memory?.topic || "Today's self-esteem conversation",
+                    pattern:
+                      memory?.pattern ||
+                      'The user was examining a harsh way of judging themselves in a specific situation.',
+                    reframe: memory?.reframe || finalStatement,
+                    finalStatement,
+                    memoryNote:
+                      memory?.memoryNote ||
+                      'Stay with the distinction they reached rather than asking them to rediscover it from scratch.',
+                  },
+                });
               }}
             />
           </View>

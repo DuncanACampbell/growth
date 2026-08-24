@@ -52,6 +52,9 @@ function normalizeWorld(world: MockWorld): MockWorld {
         '',
       exerciseId: item.exerciseId || item.challengeId,
     })),
+    programmeMemories: Array.isArray(world.programmeMemories)
+      ? world.programmeMemories
+      : [],
   };
 }
 

@@ -2,6 +2,7 @@ import { defineSecret } from 'firebase-functions/params';
 import { logger } from 'firebase-functions';
 import OpenAI from 'openai';
 
+import { parseProgrammeMemoryFields } from './guides/programme-memory';
 import { CONVERSATION_PHASES, type ConversationPhase } from './guides/types';
 import type { GuidedSessionTurn } from './session';
 
@@ -15,6 +16,7 @@ const STRUCTURED_OUTPUT_INSTRUCTION = `Return a JSON object with:
 - phase: one of ${CONVERSATION_PHASES.join(', ')}
 - isComplete: true when today's exercise is finished
 - finalStatement: when complete, a concise takeaway distilled from the user's own reframe and wording; otherwise null. Do not invent a generic wellness line.
+- memory: when complete, a compact object with topic, pattern, reframe, and memoryNote for later days in this programme; otherwise null. Do not store a transcript. Ground every field in what the user actually said.
 
 Never put JSON in the chat UI text. The reply field is what the user reads.`;
 
@@ -26,12 +28,23 @@ export type LlmChatTurn = {
 const SESSION_TURN_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['reply', 'phase', 'isComplete', 'finalStatement'],
+  required: ['reply', 'phase', 'isComplete', 'finalStatement', 'memory'],
   properties: {
     reply: { type: 'string' },
     phase: { type: 'string', enum: [...CONVERSATION_PHASES] },
     isComplete: { type: 'boolean' },
     finalStatement: { type: ['string', 'null'] },
+    memory: {
+      type: ['object', 'null'],
+      additionalProperties: false,
+      required: ['topic', 'pattern', 'reframe', 'memoryNote'],
+      properties: {
+        topic: { type: 'string' },
+        pattern: { type: 'string' },
+        reframe: { type: 'string' },
+        memoryNote: { type: 'string' },
+      },
+    },
   },
 } as const;
 
@@ -51,10 +64,12 @@ function parseTurn(raw: unknown): GuidedSessionTurn | null {
     phase?: unknown;
     isComplete?: unknown;
     finalStatement?: unknown;
+    memory?: unknown;
   };
   if (typeof record.reply !== 'string' || record.reply.trim().length === 0) {
     return null;
   }
+  const isComplete = record.isComplete === true;
   const finalStatement =
     typeof record.finalStatement === 'string' && record.finalStatement.trim().length > 0
       ? record.finalStatement.trim()
@@ -62,8 +77,9 @@ function parseTurn(raw: unknown): GuidedSessionTurn | null {
   return {
     reply: record.reply.trim(),
     phase: asConversationPhase(record.phase),
-    isComplete: record.isComplete === true,
+    isComplete,
     finalStatement,
+    memory: isComplete ? parseProgrammeMemoryFields(record.memory) : null,
   };
 }
 

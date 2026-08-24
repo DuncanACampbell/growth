@@ -16,6 +16,7 @@ import type {
   CompletedChallenge,
   HomeState,
   IsoDate,
+  ProgrammeMemoryRecord,
   StatementOfTheDay,
 } from '@/types/models';
 import type { ThemeProgress, UserProgress } from '@/types/progress';
@@ -221,6 +222,9 @@ function pruneThemeRecords(world: MockWorld, themeId: string, fromDay: number): 
     challenges: world.challenges.filter((item) => !removedIds.has(item.id)),
     sessions: world.sessions.filter((item) => !removedIds.has(item.challengeId)),
     statements: world.statements.filter((item) => !removedIds.has(item.challengeId)),
+    programmeMemories: (world.programmeMemories ?? []).filter(
+      (item) => !removedIds.has(item.exerciseId),
+    ),
   };
 }
 
@@ -320,8 +324,50 @@ export function resetEntitlements(world: MockWorld): MockWorld {
   };
 }
 
+
+function exerciseSequenceNumber(exerciseId: string): number {
+  const match = exerciseId.match(/(\d+)$/);
+  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+}
+
+function upsertProgrammeMemory(
+  world: MockWorld,
+  record: ProgrammeMemoryRecord,
+): ProgrammeMemoryRecord[] {
+  const existing = world.programmeMemories ?? [];
+  const without = existing.filter(
+    (item) => !(item.themeId === record.themeId && item.exerciseId === record.exerciseId),
+  );
+  return [...without, record];
+}
+
+/** Earlier completed memories in this theme, oldest first. Excludes the current exercise and later ones. */
+export function getPriorProgrammeMemories(
+  world: MockWorld,
+  themeId: string,
+  currentExerciseId: string,
+): ProgrammeMemoryRecord[] {
+  const current = exerciseSequenceNumber(currentExerciseId);
+  return (world.programmeMemories ?? [])
+    .filter(
+      (item) =>
+        item.themeId === themeId &&
+        exerciseSequenceNumber(item.exerciseId) < current,
+    )
+    .slice()
+    .sort((a, b) => {
+      const byExercise =
+        exerciseSequenceNumber(a.exerciseId) - exerciseSequenceNumber(b.exerciseId);
+      if (byExercise !== 0) {
+        return byExercise;
+      }
+      return (a.completedAt ?? '').localeCompare(b.completedAt ?? '');
+    });
+}
+
 export type CompleteSessionOptions = {
   finalStatement?: string | null;
+  memory?: ProgrammeMemoryRecord | null;
 };
 
 export function completeThemeSession(
@@ -399,6 +445,15 @@ export function completeThemeSession(
         lastCompletedAt: world.today,
       };
 
+  const nextMemories = options?.memory
+    ? upsertProgrammeMemory(world, {
+        ...options.memory,
+        exerciseId: todayChallenge.id,
+        finalStatement: statementText,
+        completedAt: world.today,
+      })
+    : (world.programmeMemories ?? []);
+
   const hasChallenge = world.challenges.some((item) => item.id === todayChallenge.id);
 
   return {
@@ -412,6 +467,7 @@ export function completeThemeSession(
     challenges: hasChallenge ? world.challenges : [todayChallenge, ...world.challenges],
     statements: [nextStatement, ...world.statements],
     sessions: [nextSession, ...world.sessions],
+    programmeMemories: nextMemories,
   };
 }
 
@@ -478,6 +534,7 @@ export function resetAllProgress(world: MockWorld, today: IsoDate): MockWorld {
     challenges: [],
     sessions: [],
     statements: [],
+    programmeMemories: [],
   };
 }
 

@@ -14,15 +14,20 @@ import {
   getSelfEsteemExerciseOpening,
   isFirebaseConfigured,
   sendSelfEsteemMessage,
+  type SendSelfEsteemMessageResult,
 } from '@/lib/firebase';
 import { useTheme } from '@/theme';
-import type { ChallengeMessage } from '@/types/models';
+import type { ChallengeMessage, ProgrammeMemoryRecord } from '@/types/models';
 
 type SelfEsteemDay1ChatProps = {
   sessionId: string;
   themeId: string;
   exerciseId: string;
-  onComplete?: (finalStatement: string | null) => void;
+  previousMemory?: ProgrammeMemoryRecord[];
+  onComplete?: (
+    finalStatement: string | null,
+    memory: SendSelfEsteemMessageResult['memory'],
+  ) => void;
 };
 
 function toLlmHistory(messages: ChallengeMessage[]) {
@@ -36,6 +41,7 @@ export function SelfEsteemDay1Chat({
   sessionId,
   themeId,
   exerciseId,
+  previousMemory = [],
   onComplete,
 }: SelfEsteemDay1ChatProps) {
   const theme = useTheme();
@@ -106,13 +112,14 @@ export function SelfEsteemDay1Chat({
     setMessages((current) => [...current, userMessage]);
 
     try {
-      const { reply, isComplete, finalStatement: statement } =
+      const { reply, isComplete, finalStatement: statement, memory } =
         await sendSelfEsteemMessage({
           message: text,
           themeId,
           exerciseId,
           sessionId,
           history,
+          previousMemory,
         });
       setMessages((current) => [
         ...current,
@@ -123,7 +130,7 @@ export function SelfEsteemDay1Chat({
         setFinalStatement(statement);
         if (!didPersistCompletion.current) {
           didPersistCompletion.current = true;
-          onComplete?.(statement);
+          onComplete?.(statement, memory);
         }
       }
     } catch (caught) {

@@ -7,13 +7,17 @@ export function assembleSystemPrompt(input: {
   themeGuide: ThemeGuide;
   exercise: DailyExercise;
   pacing?: string;
+  previousMemory?: string;
 }): string {
-  const { globalGuide, themeGuide, exercise, pacing } = input;
+  const { globalGuide, themeGuide, exercise, pacing, previousMemory } = input;
   const notes = exercise.notes?.trim()
     ? `\nNotes: ${exercise.notes.trim()}`
     : '';
   const pacingBlock = pacing?.trim()
     ? `\n\n## Session pacing (internal)\n${pacing.trim()}`
+    : '';
+  const memoryBlock = previousMemory?.trim()
+    ? `\n\n${previousMemory.trim()}`
     : '';
 
   return `${globalGuide.trim()}
@@ -29,10 +33,10 @@ Opening already shown to the user as the first message — treat it as the start
 What to understand: ${exercise.whatToUnderstand}
 Reframe goal: ${exercise.reframeGoal}
 Desired insight: ${exercise.desiredInsight}
-Anchor: ${exercise.anchorGuidance}${notes}${pacingBlock}
+Anchor: ${exercise.anchorGuidance}${notes}${pacingBlock}${memoryBlock}
 
 Internal phases (do not mention these names): ${CONVERSATION_PHASES.join(', ')}.
 Stay in a phase when more understanding is needed. Do not treat this as a script.
-When the day's insight has been reached, set isComplete to true, set phase to complete, and provide finalStatement distilled from the user's own language. Do not keep asking questions just because turns remain.
+When the day's insight has been reached, set isComplete to true, set phase to complete, provide finalStatement distilled from the user's own language, and fill memory (topic, pattern, reframe, memoryNote). Leave memory null until then. Do not keep asking questions just because turns remain.
 `;
 }
