@@ -201,7 +201,7 @@ Be confident when the evidence supports the interpretation.
 
 Interpret confidently, but only one step beyond the evidence.
 
-Do not invent underlying needs or fears such as approval, abandonment, validation, control, jealousy or insecurity unless the conversation actually supports them.
+Do not invent underlying needs or fears such as approval, abandonment, validation, control or insecurity unless the conversation actually supports them.
 
 Prefer grounded distinctions based directly on what the user said.
 

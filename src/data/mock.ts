@@ -30,7 +30,7 @@ export const MOCK_THEMES: Theme[] = [
     description:
       'Build a stronger, more balanced relationship with yourself through a short daily conversation.',
     longDescription:
-      'Over 30 daily conversations, you’ll explore the beliefs, reactions and habits that shape how you see yourself. Each session helps you understand your experiences, question unhelpful assumptions and practise responding with greater self-respect.',
+      'Over 7 daily conversations, you’ll explore the beliefs, reactions and habits that shape how you see yourself. Each session helps you understand your experiences, question unhelpful assumptions and practise responding with greater self-respect.',
     outcomes: [
       'Recognise patterns that undermine your confidence',
       'Question harsh or automatic beliefs about yourself',
@@ -42,18 +42,18 @@ export const MOCK_THEMES: Theme[] = [
     currency: 'EUR',
   },
   {
-    id: 'theme-jealousy',
-    name: 'Jealousy',
+    id: 'theme-money',
+    name: 'Your relationship with money',
     description:
-      'Work with comparison, threat and belonging without collapsing your sense of worth.',
+      'Look honestly at how you earn, spend, save and feel about money — without turning it into a verdict on who you are.',
     longDescription:
-      'Over 30 daily conversations, you’ll look at the situations that spark jealousy and the stories you tell yourself in those moments. Each session helps you notice comparison, stay connected to what you value, and practise responding without abandoning yourself.',
+      'Over 30 daily conversations, you’ll look at the situations that stir money stress and the stories you tell yourself in those moments. Each session helps you notice what money has come to mean, stay connected to what you actually value, and practise responding without collapsing into shame or avoidance.',
     outcomes: [
-      'Notice the situations that trigger comparison',
-      'Separate a real concern from a story about your worth',
-      'Stay steadier when someone else seems ahead',
-      'Name what you actually want instead of spiralling',
-      'Practise returning to yourself after a jealous spike',
+      'Notice the situations that trigger money anxiety or avoidance',
+      'Separate a real money problem from a story about your worth',
+      'Stay steadier when money feels tight, uneven or out of reach',
+      'Name what you actually want money for, instead of spiralling',
+      'Practise facing money without turning it into a character judgment',
     ],
     price: EUR_PRICE,
     currency: 'EUR',
@@ -166,6 +166,11 @@ export function getProgrammeForTheme(themeId: string): Programme | null {
   return PROGRAMMES.find((item) => item.themeId === themeId) ?? null;
 }
 
+/** Length of this theme's programme. Themes without a programme use the default. */
+export function getThemeDurationDays(themeId: string): number {
+  return getProgrammeForTheme(themeId)?.durationDays ?? THEME_DURATION_DAYS;
+}
+
 export function getDailySession(
   sessionId: string | null | undefined,
 ): DailySession | null {
@@ -190,12 +195,13 @@ function blueprintFromSession(
   programme: Programme,
 ): ChallengeBlueprint {
   const mock = SELF_ESTEEM_MOCK_CONVERSATIONS[session.id];
-  const label = progressLabel(session.day, THEME_DURATION_DAYS);
+  const totalDays = programme.durationDays;
+  const label = progressLabel(session.day, totalDays);
   return {
     id: session.id,
     themeId: programme.themeId,
     dayIndex: session.day,
-    totalDays: THEME_DURATION_DAYS,
+    totalDays,
     title: label,
     prompt: label,
     turns: mock?.turns ?? [{
@@ -207,12 +213,13 @@ function blueprintFromSession(
 }
 
 function placeholderBlueprint(themeId: string, day: number): ChallengeBlueprint {
-  const label = progressLabel(day, THEME_DURATION_DAYS);
+  const totalDays = getThemeDurationDays(themeId);
+  const label = progressLabel(day, totalDays);
   return {
     id: `${themeId}-day-${String(day).padStart(2, '0')}`,
     themeId,
     dayIndex: day,
-    totalDays: THEME_DURATION_DAYS,
+    totalDays,
     title: label,
     prompt: label,
     turns: [
@@ -241,11 +248,12 @@ function catalogBlueprintsForTheme(themeId: string): ChallengeBlueprint[] {
       );
 
   const byDay = new Map<number, ChallengeBlueprint>();
+  const totalDays = getThemeDurationDays(themeId);
   for (const item of authored) {
-    byDay.set(item.dayIndex, { ...item, totalDays: THEME_DURATION_DAYS });
+    byDay.set(item.dayIndex, { ...item, totalDays });
   }
 
-  return Array.from({ length: THEME_DURATION_DAYS }, (_, index) => {
+  return Array.from({ length: totalDays }, (_, index) => {
     const day = index + 1;
     return byDay.get(day) ?? placeholderBlueprint(themeId, day);
   });

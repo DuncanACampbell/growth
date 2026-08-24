@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
-import { MOCK_THEMES, getTheme, type PersonaId } from '@/data/mock';
+import { MOCK_THEMES, getTheme, getThemeDurationDays, type PersonaId } from '@/data/mock';
 import {
   didCompleteThemeToday,
   getCompletedTodayChallenge,
@@ -147,7 +147,7 @@ export default function HomeScreen() {
                 >
                   <AppText variant="body">{item?.name ?? progress.themeId}</AppText>
                   <AppText variant="caption" tone="muted">
-                    Day {progress.currentDay} of 30 · {statusLabel}
+                    Day {progress.currentDay} of {getThemeDurationDays(progress.themeId)} · {statusLabel}
                   </AppText>
                 </View>
               );

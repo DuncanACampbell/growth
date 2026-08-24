@@ -1,10 +1,10 @@
 import {
   THEME_BUNDLE_CREDIT_COUNT,
-  THEME_DURATION_DAYS,
   challengeFromBlueprint,
   getBlueprintForThemeDay,
   getChallengeBlueprint,
   getExampleStatement,
+  getThemeDurationDays,
   type MockWorld,
 } from '@/data/mock';
 import { getMockSessionNotes } from '@/data/programmes/self-esteem-mock-conversation';
@@ -19,8 +19,8 @@ import type {
 } from '@/types/models';
 import type { ThemeProgress, UserProgress } from '@/types/progress';
 
-function clampDay(day: number): number {
-  return Math.min(THEME_DURATION_DAYS, Math.max(1, Math.round(day)));
+function clampDay(day: number, themeId: string): number {
+  return Math.min(getThemeDurationDays(themeId), Math.max(1, Math.round(day)));
 }
 
 function isWaitingToday(progress: ThemeProgress, today: IsoDate): boolean {
@@ -378,7 +378,7 @@ export function completeThemeSession(
     notes,
   };
 
-  const finishedProgramme = progress.currentDay >= THEME_DURATION_DAYS;
+  const finishedProgramme = progress.currentDay >= getThemeDurationDays(themeId);
   const nextProgress: ThemeProgress = finishedProgramme
     ? {
         ...progress,
@@ -440,7 +440,7 @@ export function resetTheme(world: MockWorld, themeId: string): MockWorld {
 }
 
 export function setThemeDay(world: MockWorld, themeId: string, day: number): MockWorld {
-  const nextDay = clampDay(day);
+  const nextDay = clampDay(day, themeId);
   const unlocked = getThemeProgress(world, themeId) ? world : unlockTheme(world, themeId);
   const pruned = pruneThemeRecords(unlocked, themeId, nextDay);
   const nextProgress: ThemeProgress = {
@@ -498,7 +498,7 @@ export function loadThreeThemeScenario(world: MockWorld): MockWorld {
   const today = world.today;
   const specs: { themeId: string; day: number }[] = [
     { themeId: 'theme-presence', day: 5 },
-    { themeId: 'theme-jealousy', day: 8 },
+    { themeId: 'theme-money', day: 8 },
     { themeId: 'theme-work', day: 2 },
   ];
   let next = resetAllProgress(world, today);
