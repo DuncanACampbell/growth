@@ -1,5 +1,6 @@
 import {
   THEME_BUNDLE_CREDIT_COUNT,
+  canPurchaseTheme,
   challengeFromBlueprint,
   getBlueprintForThemeDay,
   getChallengeBlueprint,
@@ -234,6 +235,9 @@ export function selectTheme(world: MockWorld, themeId: string): MockWorld {
 }
 
 export function unlockTheme(world: MockWorld, themeId: string): MockWorld {
+  if (!canPurchaseTheme(themeId)) {
+    return world;
+  }
   if (getThemeProgress(world, themeId)) {
     return selectTheme(world, themeId);
   }
@@ -499,7 +503,7 @@ export function loadThreeThemeScenario(world: MockWorld): MockWorld {
   const specs: { themeId: string; day: number }[] = [
     { themeId: 'theme-presence', day: 5 },
     { themeId: 'theme-money', day: 8 },
-    { themeId: 'theme-work', day: 2 },
+    { themeId: 'theme-relationships', day: 2 },
   ];
   let next = resetAllProgress(world, today);
   for (const spec of specs) {

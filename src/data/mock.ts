@@ -4,6 +4,7 @@ import type {
   IsoDate,
   StatementOfTheDay,
   Theme,
+  ThemeStatus,
   User,
 } from '@/types/models';
 import type { ThemeProgress, UserProgress } from '@/types/progress';
@@ -23,10 +24,31 @@ export const THEME_BUNDLE_CREDIT_COUNT = 2;
 
 const EUR_PRICE = THEME_SINGLE_PRICE_EUR;
 
+function listedTheme(
+  id: string,
+  name: string,
+  subtitle: string,
+  status: ThemeStatus,
+): Theme {
+  return {
+    id,
+    name,
+    subtitle,
+    status,
+    description: subtitle,
+    longDescription: subtitle,
+    outcomes: [],
+    price: EUR_PRICE,
+    currency: 'EUR',
+  };
+}
+
 export const MOCK_THEMES: Theme[] = [
   {
     id: 'theme-presence',
     name: 'Building Self-Esteem',
+    subtitle: 'Building a kinder, more realistic view of yourself',
+    status: 'available',
     description:
       'Build a stronger, more balanced relationship with yourself through a short daily conversation.',
     longDescription:
@@ -43,72 +65,43 @@ export const MOCK_THEMES: Theme[] = [
   },
   {
     id: 'theme-money',
-    name: 'Your relationship with money',
-    description:
-      'Look honestly at how you earn, spend, save and feel about money — without turning it into a verdict on who you are.',
-    longDescription:
-      'Over 30 daily conversations, you’ll look at the situations that stir money stress and the stories you tell yourself in those moments. Each session helps you notice what money has come to mean, stay connected to what you actually value, and practise responding without collapsing into shame or avoidance.',
-    outcomes: [
-      'Notice the situations that trigger money anxiety or avoidance',
-      'Separate a real money problem from a story about your worth',
-      'Stay steadier when money feels tight, uneven or out of reach',
-      'Name what you actually want money for, instead of spiralling',
-      'Practise facing money without turning it into a character judgment',
-    ],
+    name: 'Money',
+    subtitle: 'Understanding beliefs, fears, habits, security, spending and abundance',
+    status: 'available',
+    description: 'Understanding beliefs, fears, habits, security, spending and abundance',
+    longDescription: 'Understanding beliefs, fears, habits, security, spending and abundance',
+    outcomes: [],
     price: EUR_PRICE,
     currency: 'EUR',
   },
-  {
-    id: 'theme-work',
-    name: 'Confidence at Work',
-    description:
-      'Speak, contribute and judge your work without using other people as the score.',
-    longDescription:
-      'Over 30 daily conversations, you’ll explore how you show up at work — speaking, contributing, and measuring yourself. Each session helps you notice old performance habits, question unhelpful standards, and practise taking up space with more steadiness.',
-    outcomes: [
-      'See where you hold back or over-perform',
-      'Question standards that only exist to impress others',
-      'Speak up with less second-guessing',
-      'Judge your work on effort and honesty, not comparison',
-      'Practise contributing without waiting to feel ready',
-    ],
-    price: EUR_PRICE,
-    currency: 'EUR',
-  },
-  {
-    id: 'theme-courage',
-    name: 'Motivation',
-    description:
-      'Reconnect with what matters to you and take the next honest step, one day at a time.',
-    longDescription:
-      'Over 30 daily conversations, you’ll look at what drains your energy, what you keep postponing, and what still matters. Each session helps you understand resistance, choose a smaller true next step, and practise moving without waiting for a perfect mood.',
-    outcomes: [
-      'Notice what actually drains or restores your energy',
-      'Name the goal underneath delay and self-criticism',
-      'Break work into a next step you can do today',
-      'Question the story that you have to feel ready first',
-      'Practise showing up even when motivation is thin',
-    ],
-    price: EUR_PRICE,
-    currency: 'EUR',
-  },
-  {
-    id: 'theme-discipline',
-    name: 'Body confidence',
-    description:
-      'Build a kinder, more honest relationship with your body through a short daily conversation.',
-    longDescription:
-      'Over 30 daily conversations, you’ll explore the habits of checking, comparing and criticising your body. Each session helps you understand those reactions, question harsh appearance rules, and practise treating your body with more respect in ordinary moments.',
-    outcomes: [
-      'Notice body-checking and comparison as they happen',
-      'Question harsh rules about how you should look',
-      'Separate health or care from self-punishment',
-      'Respond to a difficult glance with more perspective',
-      'Practise relating to your body as a place you live, not a verdict',
-    ],
-    price: EUR_PRICE,
-    currency: 'EUR',
-  },
+  listedTheme('theme-relationships', 'Relationships', 'Becoming a better partner and building healthier relationships', 'available'),
+  listedTheme('theme-anxiety', 'Anxiety', 'Understanding triggers, uncertainty, worry and coping patterns', 'available'),
+  listedTheme('theme-happiness', 'Happiness', 'Discovering what actually makes your life feel good and meaningful', 'available'),
+  listedTheme('theme-purpose', 'Purpose', 'Exploring what matters to you and what you want your life to stand for', 'available'),
+  listedTheme('theme-confidence', 'Confidence', 'Becoming more comfortable taking risks, speaking up and being seen', 'available'),
+  listedTheme('theme-overthinking', 'Overthinking', 'Recognizing rumination and learning when to stop analyzing', 'available'),
+  listedTheme('theme-career', 'Career', 'Understanding ambition, satisfaction, strengths and what you want from work', 'available'),
+  listedTheme('theme-body-image', 'Body Image', 'Changing how you think about appearance, attractiveness and your body', 'available'),
+  listedTheme('theme-friendships', 'Friendships', 'Creating deeper friendships and understanding what you need socially', 'comingSoon'),
+  listedTheme('theme-boundaries', 'Boundaries', 'Learning when to say yes, no, ask for things and protect your needs', 'comingSoon'),
+  listedTheme('theme-people-pleasing', 'People-Pleasing', 'Reducing the need for approval and becoming more authentic', 'comingSoon'),
+  listedTheme('theme-perfectionism', 'Perfectionism', 'Becoming comfortable with mistakes, imperfection and “good enough”', 'comingSoon'),
+  listedTheme('theme-jealousy', 'Jealousy', 'Understanding comparison, insecurity, possessiveness and fear of loss', 'comingSoon'),
+  listedTheme('theme-loneliness', 'Loneliness', 'Exploring connection, belonging and how to build a richer social life', 'comingSoon'),
+  listedTheme('theme-self-compassion', 'Self-Compassion', 'Changing the way you speak to and treat yourself', 'comingSoon'),
+  listedTheme('theme-emotional-resilience', 'Emotional Resilience', 'Handling disappointment, rejection, setbacks and difficult emotions', 'comingSoon'),
+  listedTheme('theme-habits-discipline', 'Habits & Discipline', 'Understanding motivation and building routines that actually stick', 'comingSoon'),
+  listedTheme('theme-procrastination', 'Procrastination', 'Understanding avoidance and becoming better at starting difficult things', 'comingSoon'),
+  listedTheme('theme-communication', 'Communication', 'Expressing needs, handling disagreements and listening better', 'comingSoon'),
+  listedTheme('theme-sex-intimacy', 'Sex & Intimacy', 'Understanding desire, vulnerability, attraction and sexual confidence', 'comingSoon'),
+  listedTheme('theme-comparison', 'Comparison', 'Breaking the habit of measuring your life against other people’s', 'comingSoon'),
+  listedTheme('theme-change', 'Change', 'Becoming more comfortable with uncertainty, transitions and letting go', 'comingSoon'),
+  listedTheme('theme-identity', 'Identity', 'Exploring who you are beyond work, relationships and other people’s expectations', 'comingSoon'),
+  listedTheme('theme-creativity', 'Creativity', 'Reconnecting with curiosity, play, ideas and self-expression', 'comingSoon'),
+  listedTheme('theme-gratitude', 'Gratitude', 'Training yourself to notice what’s already good without ignoring problems', 'comingSoon'),
+  listedTheme('theme-courage', 'Courage', 'Identifying the fears that constrain your life and gradually confronting them', 'comingSoon'),
+  listedTheme('theme-self-trust', 'Self-Trust', 'Becoming more confident in your own decisions and judgment', 'comingSoon'),
+  listedTheme('theme-your-future', 'Your Future', 'Clarifying what you want the next chapter of your life to look like', 'comingSoon'),
 ];
 
 export function getCatalogTheme(themeId: string | null | undefined): Theme | null {
@@ -116,6 +109,23 @@ export function getCatalogTheme(themeId: string | null | undefined): Theme | nul
     return null;
   }
   return MOCK_THEMES.find((item) => item.id === themeId) ?? null;
+}
+
+export function isThemeAvailable(theme: Theme): boolean {
+  return theme.status === 'available';
+}
+
+export function canPurchaseTheme(themeId: string): boolean {
+  const theme = getCatalogTheme(themeId);
+  return Boolean(theme && theme.status === 'available');
+}
+
+export function getAvailableThemes(): Theme[] {
+  return MOCK_THEMES.filter((item) => item.status === 'available');
+}
+
+export function getComingSoonThemes(): Theme[] {
+  return MOCK_THEMES.filter((item) => item.status === 'comingSoon');
 }
 
 export function formatEuroPrice(amount: number): string {
@@ -237,15 +247,17 @@ function placeholderBlueprint(themeId: string, day: number): ChallengeBlueprint 
 }
 
 function catalogBlueprintsForTheme(themeId: string): ChallengeBlueprint[] {
+  const catalogTheme = getCatalogTheme(themeId);
+  if (!catalogTheme || catalogTheme.status === 'comingSoon') {
+    return [];
+  }
   const programme = getProgrammeForTheme(themeId);
   const authored = programme
     ? programme.sessions
         .slice()
         .sort((a, b) => a.day - b.day)
         .map((session) => blueprintFromSession(session, programme))
-    : MOCK_CHALLENGE_BLUEPRINTS.filter((item) => item.themeId === themeId).sort(
-        (a, b) => a.dayIndex - b.dayIndex,
-      );
+    : [];
 
   const byDay = new Map<number, ChallengeBlueprint>();
   const totalDays = getThemeDurationDays(themeId);
@@ -258,157 +270,6 @@ function catalogBlueprintsForTheme(themeId: string): ChallengeBlueprint[] {
     return byDay.get(day) ?? placeholderBlueprint(themeId, day);
   });
 }
-
-const MOCK_CHALLENGE_BLUEPRINTS: Omit<ChallengeBlueprint, 'totalDays'>[] = [
-  {
-    id: 'challenge-courage-1',
-    themeId: 'theme-courage',
-    dayIndex: 1,
-    title: 'Name the real goal',
-    prompt: 'Get underneath busywork and name what you actually want.',
-    turns: [
-      {
-        guideText: 'What goal has been sitting in the background this week?',
-        userReply: 'I want to finish the first draft of my plan.',
-      },
-      {
-        guideText: 'Why does that goal matter to you, in one sentence?',
-        userReply: 'Because I am tired of circling and never starting.',
-      },
-      {
-        guideText: 'What would “started” look like by tonight?',
-        userReply: 'One page written, even if it is rough.',
-      },
-      {
-        guideText: 'Turn that into a statement for today.',
-        userReply: 'I write one rough page instead of circling.',
-      },
-    ],
-    exampleStatement: 'I write one rough page instead of circling.',
-  },
-  {
-    id: 'challenge-courage-2',
-    themeId: 'theme-courage',
-    dayIndex: 2,
-    title: 'Shrink the next step',
-    prompt: 'Make the next action small enough that you cannot honestly postpone it.',
-    turns: [
-      {
-        guideText: 'What task feels heavy enough that you keep delaying it?',
-        userReply: 'Outlining the whole project before I begin.',
-      },
-      {
-        guideText: 'What is a version of that task that takes ten minutes or less?',
-        userReply: 'List the three sections I already know.',
-      },
-      {
-        guideText: 'When today will you do that ten-minute version?',
-        userReply: 'Right after lunch, before I open messages.',
-      },
-    ],
-    exampleStatement: 'After lunch I list three sections and begin.',
-  },
-  {
-    id: 'challenge-courage-3',
-    themeId: 'theme-courage',
-    dayIndex: 3,
-    title: 'Start again without drama',
-    prompt: 'Treat a stall as a pause, then take one restart action.',
-    turns: [
-      {
-        guideText: 'Where did your energy drop off recently?',
-        userReply: 'I stopped after missing two mornings in a row.',
-      },
-      {
-        guideText: 'What story did you tell yourself about that stall?',
-        userReply: 'That I had already blown it, so why continue.',
-      },
-      {
-        guideText: 'What is the smallest restart that would count today?',
-        userReply: 'Open the doc and write for five minutes.',
-      },
-      {
-        guideText: 'Say the restart as a calm statement, not a punishment.',
-        userReply: 'I can start from here in five minutes.',
-      },
-    ],
-    exampleStatement: 'I can start from here in five minutes.',
-  },
-  {
-    id: 'challenge-discipline-1',
-    themeId: 'theme-discipline',
-    dayIndex: 1,
-    title: 'What your body did',
-    prompt: 'Thank your body for a function instead of grading its appearance.',
-    turns: [
-      {
-        guideText: 'What is one thing your body did for you today?',
-        userReply: 'It got me through a long walk to the shop.',
-      },
-      {
-        guideText: 'How did that actually help your day?',
-        userReply: 'I arrived clearer and less stuck in my head.',
-      },
-      {
-        guideText: 'If you thanked your body for that, what would you say?',
-        userReply: 'Thank you for carrying me when my mind was noisy.',
-      },
-    ],
-    exampleStatement: 'Thank you for carrying me when my mind was noisy.',
-  },
-  {
-    id: 'challenge-discipline-2',
-    themeId: 'theme-discipline',
-    dayIndex: 2,
-    title: 'One kinder look',
-    prompt: 'Practise looking at yourself without hunting for a flaw.',
-    turns: [
-      {
-        guideText: 'What do you usually look for first in the mirror?',
-        userReply: 'Whatever I think is wrong that day.',
-      },
-      {
-        guideText: 'Name one neutral or kind detail you skipped past.',
-        userReply: 'My eyes looked awake after sleeping well.',
-      },
-      {
-        guideText: 'What happens if you let that be the first thing you notice?',
-        userReply: 'The rest of the critique gets quieter.',
-      },
-      {
-        guideText: 'Write a statement you can use the next time you look.',
-        userReply: 'I look for what is well before what is wrong.',
-      },
-    ],
-    exampleStatement: 'I look for what is well before what is wrong.',
-  },
-  {
-    id: 'challenge-discipline-3',
-    themeId: 'theme-discipline',
-    dayIndex: 3,
-    title: 'Wear what feels like you',
-    prompt: 'Choose clothes for comfort and self-respect, not for hiding.',
-    turns: [
-      {
-        guideText: 'What outfit do you reach for when you want to disappear?',
-        userReply: 'The oversized jumper I hide in on low days.',
-      },
-      {
-        guideText: 'What would feel like you today without performing for anyone?',
-        userReply: 'The shirt that fits and still feels easy.',
-      },
-      {
-        guideText: 'What would choosing that be saying to yourself?',
-        userReply: 'I do not have to hide to be acceptable.',
-      },
-      {
-        guideText: 'Turn that into today’s statement.',
-        userReply: 'I do not have to hide to be acceptable.',
-      },
-    ],
-    exampleStatement: 'I do not have to hide to be acceptable.',
-  },
-];
 
 export type MockWorld = {
   personaId: PersonaId;
@@ -506,7 +367,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
   }
 
   if (personaId === 'incomplete') {
-    const themeId = 'theme-courage';
+    const themeId = 'theme-presence';
     return emptyWorld(
       'incomplete',
       today,

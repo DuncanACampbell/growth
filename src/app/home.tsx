@@ -3,7 +3,13 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
-import { MOCK_THEMES, getTheme, getThemeDurationDays, type PersonaId } from '@/data/mock';
+import {
+  getAvailableThemes,
+  getComingSoonThemes,
+  getTheme,
+  getThemeDurationDays,
+  type PersonaId,
+} from '@/data/mock';
 import {
   didCompleteThemeToday,
   getCompletedTodayChallenge,
@@ -52,7 +58,9 @@ export default function HomeScreen() {
   });
   const previous = getPreviousCompletions(world);
   const unlockedIds = new Set(owned.map((item) => item.themeId));
-  const lockedThemes = MOCK_THEMES.filter((item) => !unlockedIds.has(item.id));
+  const availableThemes = getAvailableThemes();
+  const comingSoonThemes = getComingSoonThemes();
+  const lockedThemes = availableThemes.filter((item) => !unlockedIds.has(item.id));
 
   function openChallenge(themeId: string) {
     router.push({ pathname: '/challenge', params: { themeId } });
@@ -101,7 +109,7 @@ export default function HomeScreen() {
             <AppText variant="body" tone="muted">
               No theme unlocked yet. Pick one to see the programme and unlock it.
             </AppText>
-            {MOCK_THEMES.map((item) => (
+            {availableThemes.map((item) => (
               <Pressable
                 key={item.id}
                 accessibilityRole="button"
@@ -117,9 +125,32 @@ export default function HomeScreen() {
               >
                 <AppText variant="body">{item.name}</AppText>
                 <AppText variant="caption" tone="muted">
-                  {item.description}
+                  {item.subtitle}
                 </AppText>
               </Pressable>
+            ))}
+            {comingSoonThemes.map((item) => (
+              <View
+                key={item.id}
+                accessibilityState={{ disabled: true }}
+                style={{
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                  borderRadius: theme.radii.md,
+                  borderWidth: 1,
+                  gap: theme.spacing.xs,
+                  opacity: 0.7,
+                  padding: theme.spacing.lg,
+                }}
+              >
+                <AppText variant="body">{item.name}</AppText>
+                <AppText variant="caption" tone="muted">
+                  {item.subtitle}
+                </AppText>
+                <AppText variant="caption" tone="muted">
+                  Coming soon...
+                </AppText>
+              </View>
             ))}
           </View>
         ) : listedThemes.length > 0 ? (
@@ -146,6 +177,11 @@ export default function HomeScreen() {
                   }}
                 >
                   <AppText variant="body">{item?.name ?? progress.themeId}</AppText>
+                  {item?.subtitle ? (
+                    <AppText variant="caption" tone="muted">
+                      {item.subtitle}
+                    </AppText>
+                  ) : null}
                   <AppText variant="caption" tone="muted">
                     Day {progress.currentDay} of {getThemeDurationDays(progress.themeId)} · {statusLabel}
                   </AppText>
@@ -253,21 +289,60 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {lockedThemes.length > 0 && homeState !== 'new' ? (
+        {homeState !== 'new' ? (
           <View style={{ gap: theme.spacing.sm }}>
-            <AppText variant="caption" tone="muted">
-              Unlock another theme
-            </AppText>
-            {lockedThemes.map((item) => (
-              <Pressable
-                key={item.id}
-                accessibilityRole="button"
-                onPress={() => openPurchase(item.id)}
-              >
-                <AppText variant="body" tone="primary">
-                  Unlock {item.name}
+            {lockedThemes.length > 0 ? (
+              <>
+                <AppText variant="caption" tone="muted">
+                  Unlock another theme
                 </AppText>
-              </Pressable>
+                {lockedThemes.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    accessibilityRole="button"
+                    onPress={() => openPurchase(item.id)}
+                    style={{
+                      backgroundColor: theme.colors.surface,
+                      borderColor: theme.colors.border,
+                      borderRadius: theme.radii.md,
+                      borderWidth: 1,
+                      gap: theme.spacing.xs,
+                      padding: theme.spacing.lg,
+                    }}
+                  >
+                    <AppText variant="body">{item.name}</AppText>
+                    <AppText variant="caption" tone="muted">
+                      {item.subtitle}
+                    </AppText>
+                  </Pressable>
+                ))}
+              </>
+            ) : null}
+            <AppText variant="caption" tone="muted">
+              Coming soon
+            </AppText>
+            {comingSoonThemes.map((item) => (
+              <View
+                key={item.id}
+                accessibilityState={{ disabled: true }}
+                style={{
+                  backgroundColor: theme.colors.surface,
+                  borderColor: theme.colors.border,
+                  borderRadius: theme.radii.md,
+                  borderWidth: 1,
+                  gap: theme.spacing.xs,
+                  opacity: 0.7,
+                  padding: theme.spacing.lg,
+                }}
+              >
+                <AppText variant="body">{item.name}</AppText>
+                <AppText variant="caption" tone="muted">
+                  {item.subtitle}
+                </AppText>
+                <AppText variant="caption" tone="muted">
+                  Coming soon...
+                </AppText>
+              </View>
             ))}
           </View>
         ) : null}

@@ -13,13 +13,19 @@ export type User = {
 
 export type ThemeCurrency = 'EUR';
 
+export type ThemeStatus = 'available' | 'comingSoon';
+
 /**
  * A focus area the user works on — not the UI colour theme.
  * `description` is the short purchase/card summary.
+ * `subtitle` is the catalogue line shown under the name.
+ * `status` controls whether the theme can be opened or purchased.
  */
 export type Theme = {
   id: string;
   name: string;
+  subtitle: string;
+  status: ThemeStatus;
   description: string;
   longDescription: string;
   outcomes: string[];

@@ -31,7 +31,7 @@ export default function ThemePurchaseScreen() {
     return <Redirect href="/login" />;
   }
 
-  if (!catalogTheme) {
+  if (!catalogTheme || catalogTheme.status === 'comingSoon') {
     return <Redirect href="/home" />;
   }
 
@@ -99,14 +99,16 @@ export default function ThemePurchaseScreen() {
 
           <AppText variant="body">{catalogTheme.longDescription}</AppText>
 
-          <View style={{ gap: theme.spacing.sm }}>
-            <AppText variant="subtitle">What you may develop</AppText>
-            {catalogTheme.outcomes.map((outcome) => (
-              <AppText key={outcome} variant="body">
-                • {outcome}
-              </AppText>
-            ))}
-          </View>
+          {catalogTheme.outcomes.length > 0 ? (
+            <View style={{ gap: theme.spacing.sm }}>
+              <AppText variant="subtitle">What you may develop</AppText>
+              {catalogTheme.outcomes.map((outcome) => (
+                <AppText key={outcome} variant="body">
+                  • {outcome}
+                </AppText>
+              ))}
+            </View>
+          ) : null}
         </View>
 
         <View style={{ gap: theme.spacing.md }}>
