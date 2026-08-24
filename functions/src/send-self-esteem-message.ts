@@ -8,6 +8,12 @@ import {
   getThemeGuide,
 } from './guides/index';
 import { generateSelfEsteemReply, openaiApiKey, type LlmChatTurn } from './llm';
+import {
+  applyCompletionOverride,
+  countUserTurns,
+  MAX_USER_TURNS,
+  pacingInstructions,
+} from './session';
 
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_HISTORY_ITEMS = 40;
@@ -85,25 +91,44 @@ export const sendSelfEsteemMessage = onCall(
       throw new HttpsError('not-found', 'Unknown theme or exercise.');
     }
 
+    const history = parseHistory(data.history);
+    const userTurnNumber = countUserTurns(history) + 1;
+    if (userTurnNumber > MAX_USER_TURNS) {
+      throw new HttpsError(
+        'failed-precondition',
+        'This session is already complete.',
+      );
+    }
+    const mustComplete = userTurnNumber >= MAX_USER_TURNS;
+
     const systemPrompt = assembleSystemPrompt({
       globalGuide: getGlobalConversationGuide(),
       themeGuide,
       exercise,
+      pacing: pacingInstructions(userTurnNumber, mustComplete),
     });
-    const history = parseHistory(data.history);
 
     try {
-      const reply = await generateSelfEsteemReply({
+      const turn = await generateSelfEsteemReply({
         systemPrompt,
         history,
         message,
       });
-      return { reply };
+      const result = applyCompletionOverride(
+        turn,
+        mustComplete || turn.isComplete,
+      );
+      return {
+        reply: result.reply,
+        isComplete: result.isComplete,
+        finalStatement: result.finalStatement,
+      };
     } catch (caught) {
       logger.error('Self-esteem LLM call failed.', {
         sessionId: sessionId ?? null,
         themeId,
         exerciseId,
+        userTurnNumber,
       });
       if (caught instanceof HttpsError) {
         throw caught;

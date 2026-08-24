@@ -17,6 +17,8 @@ export type SendSelfEsteemMessageInput = {
 
 export type SendSelfEsteemMessageResult = {
   reply: string;
+  isComplete: boolean;
+  finalStatement: string | null;
 };
 
 export type GetSelfEsteemExerciseOpeningInput = {
@@ -96,7 +98,11 @@ export async function sendSelfEsteemMessage(
       throw new Error('The backend returned an empty reply.');
     }
 
-    return { reply };
+    return {
+      reply,
+      isComplete: result.data.isComplete === true,
+      finalStatement: result.data.finalStatement?.trim() || null,
+    };
   } catch (caught) {
     if (caught instanceof Error && caught.message) {
       throw caught;

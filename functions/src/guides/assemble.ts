@@ -6,10 +6,14 @@ export function assembleSystemPrompt(input: {
   globalGuide: string;
   themeGuide: ThemeGuide;
   exercise: DailyExercise;
+  pacing?: string;
 }): string {
-  const { globalGuide, themeGuide, exercise } = input;
+  const { globalGuide, themeGuide, exercise, pacing } = input;
   const notes = exercise.notes?.trim()
     ? `\nNotes: ${exercise.notes.trim()}`
+    : '';
+  const pacingBlock = pacing?.trim()
+    ? `\n\n## Session pacing (internal)\n${pacing.trim()}`
     : '';
 
   return `${globalGuide.trim()}
@@ -25,9 +29,10 @@ Opening already shown to the user as the first message — treat it as the start
 What to understand: ${exercise.whatToUnderstand}
 Reframe goal: ${exercise.reframeGoal}
 Desired insight: ${exercise.desiredInsight}
-Anchor: ${exercise.anchorGuidance}${notes}
+Anchor: ${exercise.anchorGuidance}${notes}${pacingBlock}
 
 Internal phases (do not mention these names): ${CONVERSATION_PHASES.join(', ')}.
-Stay in a phase when more understanding is needed. Do not treat this as a script or a message quota.
+Stay in a phase when more understanding is needed. Do not treat this as a script.
+When the day's insight has been reached, set isComplete to true, set phase to complete, and provide finalStatement. Do not keep asking questions just because turns remain.
 `;
 }

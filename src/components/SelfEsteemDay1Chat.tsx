@@ -38,12 +38,19 @@ export function SelfEsteemDay1Chat({
   const theme = useTheme();
   const [messages, setMessages] = useState<ChallengeMessage[]>([]);
   const [loadingOpening, setLoadingOpening] = useState(true);
+  const [sessionComplete, setSessionComplete] = useState(false);
+  const [finalStatement, setFinalStatement] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const ready = messages.length > 0 && !loadingOpening;
-  const canSend = ready && draft.trim().length > 0 && !sending;
+  const userReplyCount = messages.filter((message) => message.role === 'user')
+    .length;
+  const atTurnLimit = userReplyCount >= 9;
+  const conversationClosed = sessionComplete || atTurnLimit;
+  const canSend =
+    ready && !conversationClosed && draft.trim().length > 0 && !sending;
 
   async function loadOpening() {
     if (!isFirebaseConfigured()) {
@@ -78,7 +85,7 @@ export function SelfEsteemDay1Chat({
 
   async function send() {
     const text = draft.trim();
-    if (!text || sending || !ready) {
+    if (!text || sending || !ready || conversationClosed) {
       return;
     }
 
@@ -95,17 +102,22 @@ export function SelfEsteemDay1Chat({
     setMessages((current) => [...current, userMessage]);
 
     try {
-      const { reply } = await sendSelfEsteemMessage({
-        message: text,
-        themeId,
-        exerciseId,
-        sessionId,
-        history,
-      });
+      const { reply, isComplete, finalStatement: statement } =
+        await sendSelfEsteemMessage({
+          message: text,
+          themeId,
+          exerciseId,
+          sessionId,
+          history,
+        });
       setMessages((current) => [
         ...current,
         { id: `guide-${Date.now()}`, role: 'guide', text: reply },
       ]);
+      if (isComplete) {
+        setSessionComplete(true);
+        setFinalStatement(statement);
+      }
     } catch (caught) {
       const message =
         caught instanceof Error ? caught.message : 'Could not reach the backend.';
@@ -198,6 +210,14 @@ export function SelfEsteemDay1Chat({
             Try again
           </AppText>
         </Pressable>
+      ) : conversationClosed ? (
+        <AppText
+          variant="caption"
+          tone="muted"
+          accessibilityHint={finalStatement ?? undefined}
+        >
+          That’s it for today.
+        </AppText>
       ) : (
         <View style={{ gap: theme.spacing.sm }}>
           <TextInput
