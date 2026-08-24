@@ -12,7 +12,7 @@ import {
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import { SelfEsteemDay1Chat } from '@/components/SelfEsteemDay1Chat';
-import { getDailySession, getExampleStatement, getGuidedTurns } from '@/data/mock';
+import { getExampleStatement, getGuidedTurns } from '@/data/mock';
 import { SELF_ESTEEM_PROGRAMME } from '@/data/programmes/self-esteem';
 import {
   didCompleteThemeToday,
@@ -86,10 +86,9 @@ export default function ChallengeScreen() {
   }
 
   const showCompletion = alreadyComplete;
-  const isSelfEsteemDay1 = todaysChallenge?.id === 'self-esteem-01';
-  const selfEsteemDay1 = isSelfEsteemDay1
-    ? getDailySession(todaysChallenge.id)
-    : null;
+  const isSelfEsteemExercise =
+    typeof todaysChallenge.id === 'string' &&
+    todaysChallenge.id.startsWith('self-esteem-');
 
   function sendMockReply() {
     const current = guidedTurns[turnIndex];
@@ -109,7 +108,7 @@ export default function ChallengeScreen() {
     setAwaitingReply(true);
   }
 
-  if (selfEsteemDay1 && (!showCompletion || keepLiveChat)) {
+  if (isSelfEsteemExercise && (!showCompletion || keepLiveChat)) {
     return (
       <Screen>
         <KeyboardAvoidingView
@@ -123,7 +122,7 @@ export default function ChallengeScreen() {
               paddingTop: theme.spacing.lg,
             }}
           >
-            <AppText variant="title">Today’s challenge</AppText>
+            <AppText variant="title">{todaysChallenge.title}</AppText>
             <AppText variant="body" tone="muted">
               {todaysChallenge.prompt}
             </AppText>
@@ -162,7 +161,7 @@ export default function ChallengeScreen() {
         }}
       >
         <AppText variant="title">
-          {showCompletion ? 'Today’s notice' : 'Today’s challenge'}
+          {showCompletion ? 'Today’s notice' : todaysChallenge.title}
         </AppText>
         <AppText variant="body" tone="muted">
           {todaysChallenge.prompt}

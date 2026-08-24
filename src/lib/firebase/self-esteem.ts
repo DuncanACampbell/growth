@@ -63,8 +63,8 @@ export async function getSelfEsteemExerciseOpening(
 }
 
 /**
- * Client entry for Self-Esteem Day 1. The UI should not know about LLM providers
- * or prompt text — Firebase loads the guides from the exercise identity.
+ * Client entry for a Self-Esteem daily exercise. The UI should not know about
+ * LLM providers or prompt text — Firebase loads the guides from themeId + exerciseId.
  */
 export async function sendSelfEsteemMessage(
   input: SendSelfEsteemMessageInput,

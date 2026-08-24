@@ -202,7 +202,7 @@ function blueprintFromSession(
     themeId: programme.themeId,
     dayIndex: session.day,
     totalDays,
-    title: label,
+    title: session.concept,
     prompt: label,
     turns: mock?.turns ?? [{
       guideText: session.opening ?? '',

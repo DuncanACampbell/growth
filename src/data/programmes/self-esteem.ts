@@ -35,28 +35,25 @@ export const SELF_ESTEEM_PROGRAMME: Programme = {
     {
       id: "self-esteem-02",
       day: 2,
-      concept: "Evidence vs. Belief",
+      concept: "Your Inner Voice",
 
       objective:
-        "Help the user recognise that strongly believing something negative about themselves does not necessarily make it objectively true.",
-
-      opening:
-        "What's something negative you sometimes believe about yourself that affects your confidence or the way you behave?",
+        "Notice how you speak to yourself after a mistake and distinguish useful evaluation from self-attack.",
 
       explorationGoal:
-        "Understand where this belief comes from and what experiences the user sees as evidence for it.",
+        "Understand the mistake and the actual message the user gave themselves afterwards.",
 
       beliefGoal:
-        "Clarify the deeper conclusion the user has formed about themselves and how strongly they treat that conclusion as fact.",
+        "Notice whether the criticism stayed on the behaviour or expanded into a judgment about who they are.",
 
       reframeGoal:
-        "Explore evidence both supporting and contradicting the belief. Help the user develop a more complete and balanced interpretation rather than replacing it with artificial positivity.",
+        "Explore a fair but constructive response that still allows responsibility, without replacing criticism with artificial positivity.",
 
       applicationGoal:
-        "Help the user develop a way to question or investigate similar negative beliefs before automatically accepting them.",
+        "Help the user see that they can acknowledge what went wrong without turning against themselves.",
 
       anchorGoal:
-        "Create a concise statement reinforcing the distinction between believing something about oneself and knowing it to be true."
+        "Create a short statement based on the user's own fairer inner response.",
     },
 
     {
@@ -65,133 +62,118 @@ export const SELF_ESTEEM_PROGRAMME: Programme = {
       concept: "Comparison",
 
       objective:
-        "Help the user recognise when comparison with other people is being used as a measurement of their own worth.",
-
-      opening:
-        "Think of a recent moment when comparing yourself with somebody else made you feel worse about yourself. What happened?",
+        "Identify one comparison that makes you feel worse about yourself, and notice when someone else's strength is being used as evidence against you.",
 
       explorationGoal:
-        "Understand what the user noticed in the other person and why that particular comparison affected them.",
+        "Understand who they compare themselves with and which quality gets to them.",
 
       beliefGoal:
-        "Identify what the comparison led the user to conclude about themselves or what they believe they lack.",
+        "Identify the conclusion they draw about themselves because the other person has that quality.",
 
       reframeGoal:
-        "Explore whether the comparison is complete or fair, including differences in circumstances, unknown information about the other person, and qualities or progress in the user that the comparison ignores.",
+        "Separate what the other person has from what the user is making that mean about themselves.",
 
       applicationGoal:
-        "Help the user decide how they want to respond when they notice themselves using another person as evidence of their own inadequacy.",
+        "Help the user notice comparison without automatically treating the other person as evidence against them.",
 
       anchorGoal:
-        "Create a personalised statement reinforcing that recognising another person's strengths does not require diminishing one's own value."
+        "Create a personalised statement grounded in the specific comparison.",
     },
 
     {
       id: "self-esteem-04",
       day: 4,
-      concept: "External Validation",
+      concept: "Whose Opinion Counts?",
 
       objective:
-        "Help the user separate their sense of personal worth from other people's approval, attention, attraction, praise, or decisions.",
-
-      opening:
-        "Think of a recent situation where somebody else's reaction to you — or lack of reaction — noticeably changed how you felt about yourself. What happened?",
+        "Identify whose opinion has too much power over how you feel about yourself, without having to stop caring what they think.",
 
       explorationGoal:
-        "Understand why the other person's response mattered and what emotional significance the user attached to it.",
+        "Understand whose opinion carries extra weight and what kind of approval the user seeks.",
 
       beliefGoal:
-        "Identify what the user believed the other person's behaviour or decision proved about them.",
+        "Identify what they conclude about themselves when that person's response is negative or absent.",
 
       reframeGoal:
-        "Explore other factors that could explain the person's behaviour or decision and whether it is reasonable to treat that single response as a broad judgment of the user's worth or ability.",
+        "Explore what it would mean for that opinion to have a vote rather than the only vote.",
 
       applicationGoal:
-        "Help the user decide how to evaluate similar situations without automatically turning another person's response into a verdict on themselves.",
+        "Help the user keep wanting approval while maintaining their own opinion of themselves.",
 
       anchorGoal:
-        "Transform the user's own insight into a memorable statement separating external outcomes from personal worth."
+        "Create a personalised statement that keeps both their care for the other person and their own vote.",
     },
 
     {
       id: "self-esteem-05",
       day: 5,
-      concept: "Owning Your Strengths",
+      concept: "More Than Your Achievements",
 
       objective:
-        "Help the user recognise genuine strengths and positive qualities without immediately minimising or discounting them.",
-
-      opening:
-        "Think of something you've handled well recently, even if it seems small. What happened?",
+        "Look at one milestone you thought you should have reached, and separate that outcome from what it supposedly says about who you are.",
 
       explorationGoal:
-        "Explore what the user actually did that contributed to the positive outcome.",
+        "Understand the unmet achievement and what the user believes it would have proved.",
 
       beliefGoal:
-        "Notice whether the user struggles to attribute positive outcomes to their own abilities, choices, effort, character, or growth.",
+        "Identify what not achieving it currently makes them believe about themselves.",
 
       reframeGoal:
-        "If the user minimises their contribution, explore what they would recognise in another person who had behaved in the same way.",
+        "Separate not having achieved X from being X kind of person, without minimising the goal.",
 
       applicationGoal:
-        "Help the user identify another situation where they could deliberately rely on or develop the strength they have recognised.",
+        "Allow them to want more from life without treating today's results as a complete verdict.",
 
       anchorGoal:
-        "Create a grounded statement based on a strength demonstrated through the user's own evidence rather than generic praise."
+        "Create a statement using the user's wording about timeline, achievement and identity.",
     },
 
     {
       id: "self-esteem-06",
       day: 6,
-      concept: "Your Needs Matter Too",
+      concept: "What You Respect About Yourself",
 
       objective:
-        "Connect self-esteem with recognising one's own needs, preferences, boundaries, and feelings as legitimate.",
-
-      opening:
-        "Think of a recent situation where you struggled to express something you wanted or needed because you were worried about another person's reaction. What happened?",
+        "Name something you genuinely respect in yourself that does not depend mainly on achievement, praise or being useful to others.",
 
       explorationGoal:
-        "Understand what the user wanted or needed and why expressing it felt difficult.",
+        "Identify the quality and why the user values it, looking underneath achievements for the characteristic they demonstrate.",
 
       beliefGoal:
-        "Explore what the user feared expressing the need would mean about them or what they feared would happen as a result.",
+        "Clarify whether the quality remains meaningful without praise, notice or external reward.",
 
       reframeGoal:
-        "Examine whether caring about another person's needs genuinely requires minimising one's own, while recognising that needs can sometimes conflict and require compromise.",
+        "Help the user experience the quality as internally grounded rather than as generic positive affirmation.",
 
       applicationGoal:
-        "Help the user identify a respectful way they could communicate or act on a similar need in the future.",
+        "Let the internally valued quality land as a more stable source of self-respect.",
 
       anchorGoal:
-        "Create a statement reinforcing the compatibility of respecting others and respecting oneself."
+        "Build a short statement directly from the quality the user discovered.",
     },
 
     {
       id: "self-esteem-07",
       day: 7,
-      concept: "Acting With Self-Respect",
+      concept: "Your Own Measure",
 
       objective:
-        "Help consolidate the week's learning by shifting the focus from needing to feel confident to choosing behaviours consistent with self-respect.",
-
-      opening:
-        "Where in your life right now do you think insecurity is having the biggest influence on the way you behave or the decisions you make?",
+        "Bring the week together and name a more internally grounded standard for self-respect going forward.",
 
       explorationGoal:
-        "Understand how insecurity currently changes the user's behaviour and what they are trying to protect themselves from.",
+        "Understand what the user thinks they have been getting wrong about how they evaluate themselves.",
 
       beliefGoal:
-        "Identify the underlying fear or belief that is driving that behaviour.",
+        "Identify which external measures have had too much power and which internal standards now feel more important.",
 
       reframeGoal:
-        "Explore how the user might understand the situation differently if they already possessed the self-esteem they are trying to develop.",
+        "Move from what proves they are good enough toward the standards they actually want to use.",
 
       applicationGoal:
-        "Help the user choose one specific behaviour they could practise that reflects self-respect even if the feeling of confidence has not yet arrived.",
+        "Help them name a practical shift in how they want to respond when self-judgment appears again.",
 
       anchorGoal:
-        "Create a personalised final statement that captures the user's most important insight from the conversation and reinforces self-respect as something practised through behaviour."
-    }
+        "Create one concise personalised statement that captures their emerging philosophy of self-respect.",
+    },
   ]
 };
