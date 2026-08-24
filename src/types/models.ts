@@ -78,6 +78,8 @@ export type StatementOfTheDay = {
   id: string;
   userId: string;
   challengeId: string;
+  themeId: string;
+  exerciseId: string;
   date: IsoDate;
   text: string;
 };

@@ -549,6 +549,8 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
         id: `statement-${world.user.id}-${challenge.id}`,
         userId: world.user.id,
         challengeId: challenge.id,
+        themeId: challenge.themeId,
+        exerciseId: challenge.id,
         date: today,
         text: blueprint.exampleStatement,
       },

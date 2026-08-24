@@ -209,10 +209,14 @@ export default function HomeScreen() {
                 {item?.name} — completed
               </AppText>
               <AppText variant="body">{challenge.title}</AppText>
-              <AppText variant="caption" tone="muted">
-                Statement of the day
-              </AppText>
-              <AppText variant="subtitle">{todaysStatement?.text}</AppText>
+              {todaysStatement?.text ? (
+                <>
+                  <AppText variant="caption" tone="muted">
+                    Thought of the day
+                  </AppText>
+                  <AppText variant="subtitle">“{todaysStatement.text}”</AppText>
+                </>
+              ) : null}
               {!waitingToday && progress.status === 'active' ? (
                 <AppText variant="caption" tone="muted">
                   Come back tomorrow for Day {progress.currentDay}
@@ -241,7 +245,7 @@ export default function HomeScreen() {
                 </AppText>
                 <AppText variant="body">{item.challenge.title}</AppText>
                 <AppText variant="caption" tone="muted">
-                  Statement of the day
+                  Thought of the day
                 </AppText>
                 <AppText variant="body">{item.statement.text}</AppText>
               </View>

@@ -33,6 +33,6 @@ Anchor: ${exercise.anchorGuidance}${notes}${pacingBlock}
 
 Internal phases (do not mention these names): ${CONVERSATION_PHASES.join(', ')}.
 Stay in a phase when more understanding is needed. Do not treat this as a script.
-When the day's insight has been reached, set isComplete to true, set phase to complete, and provide finalStatement. Do not keep asking questions just because turns remain.
+When the day's insight has been reached, set isComplete to true, set phase to complete, and provide finalStatement distilled from the user's own language. Do not keep asking questions just because turns remain.
 `;
 }

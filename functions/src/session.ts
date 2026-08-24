@@ -25,7 +25,7 @@ export function pacingInstructions(
 
 This is the FINAL user reply. You MUST close the session now.
 Set isComplete to true and phase to complete.
-Write a personalised finalStatement.
+Write a personalised finalStatement distilled from the user's own reframe and wording.
 Do not ask a question.
 Do not introduce another issue.
 Summarise the useful shift, then close.`;

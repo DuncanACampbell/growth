@@ -316,7 +316,15 @@ export function resetEntitlements(world: MockWorld): MockWorld {
   };
 }
 
-export function completeThemeSession(world: MockWorld, themeId: string): MockWorld {
+export type CompleteSessionOptions = {
+  finalStatement?: string | null;
+};
+
+export function completeThemeSession(
+  world: MockWorld,
+  themeId: string,
+  options?: CompleteSessionOptions,
+): MockWorld {
   const progress = getThemeProgress(world, themeId);
   if (!progress || !isWaitingToday(progress, world.today)) {
     return world;
@@ -346,12 +354,19 @@ export function completeThemeSession(world: MockWorld, themeId: string): MockWor
   ]);
 
   const notes = getMockSessionNotes(todayChallenge.id);
+  const statementText =
+    options?.finalStatement?.trim() ||
+    notes?.dailyExercise ||
+    getExampleStatement(todayChallenge.id) ||
+    todayChallenge.title;
   const nextStatement: StatementOfTheDay = {
     id: `statement-${world.user.id}-${todayChallenge.id}`,
     userId: world.user.id,
     challengeId: todayChallenge.id,
+    themeId,
+    exerciseId: todayChallenge.id,
     date: world.today,
-    text: notes?.dailyExercise ?? getExampleStatement(todayChallenge.id) ?? todayChallenge.title,
+    text: statementText,
   };
   const nextSession = {
     id: `session-${world.user.id}-${todayChallenge.id}`,
@@ -396,12 +411,16 @@ export function completeThemeSession(world: MockWorld, themeId: string): MockWor
   };
 }
 
-export function completeTodaysChallenge(world: MockWorld, themeId?: string | null): MockWorld {
+export function completeTodaysChallenge(
+  world: MockWorld,
+  themeId?: string | null,
+  options?: CompleteSessionOptions,
+): MockWorld {
   const id = themeId ?? world.user.selectedThemeId;
   if (!id) {
     return world;
   }
-  return completeThemeSession(world, id);
+  return completeThemeSession(world, id, options);
 }
 
 export function resetTheme(world: MockWorld, themeId: string): MockWorld {

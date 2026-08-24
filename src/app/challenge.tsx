@@ -30,6 +30,7 @@ export default function ChallengeScreen() {
   const { themeId: themeIdParam } = useLocalSearchParams<{ themeId?: string }>();
   const [turnIndex, setTurnIndex] = useState(0);
   const [awaitingReply, setAwaitingReply] = useState(true);
+  const [keepLiveChat, setKeepLiveChat] = useState(false);
 
   const themeId =
     (typeof themeIdParam === 'string' && themeIdParam.length > 0
@@ -108,7 +109,7 @@ export default function ChallengeScreen() {
     setAwaitingReply(true);
   }
 
-  if (selfEsteemDay1 && !showCompletion) {
+  if (selfEsteemDay1 && (!showCompletion || keepLiveChat)) {
     return (
       <Screen>
         <KeyboardAvoidingView
@@ -140,6 +141,10 @@ export default function ChallengeScreen() {
               sessionId={todaysChallenge.id}
               themeId={SELF_ESTEEM_PROGRAMME.id}
               exerciseId={todaysChallenge.id}
+              onComplete={(statement) => {
+                setKeepLiveChat(true);
+                completeToday(themeId ?? undefined, { finalStatement: statement });
+              }}
             />
           </View>
         </KeyboardAvoidingView>

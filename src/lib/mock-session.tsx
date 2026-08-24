@@ -30,6 +30,7 @@ import {
   unlockThemeWithBundlePurchase as unlockWithBundleInWorld,
   unlockThemeWithCredit as unlockWithCreditInWorld,
   unlockThemeWithSinglePurchase as unlockWithSingleInWorld,
+  type CompleteSessionOptions,
 } from '@/data/progression';
 import { getLocalIsoDate } from '@/lib/calendar';
 
@@ -42,6 +43,15 @@ function normalizeWorld(world: MockWorld): MockWorld {
       ...world.userProgress,
       themeCredits: Math.max(0, world.userProgress.themeCredits ?? 0),
     },
+    statements: world.statements.map((item) => ({
+      ...item,
+      themeId:
+        item.themeId ||
+        world.challenges.find((challenge) => challenge.id === item.challengeId)
+          ?.themeId ||
+        '',
+      exerciseId: item.exerciseId || item.challengeId,
+    })),
   };
 }
 
@@ -60,7 +70,7 @@ type MockSessionValue = {
   unlockThemeWithCredit: (themeId: string) => void;
   setThemeCredits: (count: number) => void;
   resetEntitlements: () => void;
-  completeToday: (themeId?: string) => void;
+  completeToday: (themeId?: string, options?: CompleteSessionOptions) => void;
   resetProgress: () => void;
   resetThemeProgress: (themeId: string) => void;
   setThemeDayNumber: (themeId: string, day: number) => void;
@@ -157,11 +167,14 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
     setWorld((current) => (current ? resetEntitlementsInWorld(current) : current));
   }, []);
 
-  const completeToday = useCallback((themeId?: string) => {
-    setWorld((current) =>
-      current ? completeTodaysChallenge(current, themeId) : current,
-    );
-  }, []);
+  const completeToday = useCallback(
+    (themeId?: string, options?: CompleteSessionOptions) => {
+      setWorld((current) =>
+        current ? completeTodaysChallenge(current, themeId, options) : current,
+      );
+    },
+    [],
+  );
 
   const resetProgress = useCallback(() => {
     setWorld((current) =>

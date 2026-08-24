@@ -14,7 +14,7 @@ const STRUCTURED_OUTPUT_INSTRUCTION = `Return a JSON object with:
 - reply: the user-facing message only (no JSON in this field)
 - phase: one of ${CONVERSATION_PHASES.join(', ')}
 - isComplete: true when today's exercise is finished
-- finalStatement: the one-sentence takeaway when complete, otherwise null
+- finalStatement: when complete, a concise takeaway distilled from the user's own reframe and wording; otherwise null. Do not invent a generic wellness line.
 
 Never put JSON in the chat UI text. The reply field is what the user reads.`;
 

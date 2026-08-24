@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -21,6 +22,7 @@ type SelfEsteemDay1ChatProps = {
   sessionId: string;
   themeId: string;
   exerciseId: string;
+  onComplete?: (finalStatement: string | null) => void;
 };
 
 function toLlmHistory(messages: ChallengeMessage[]) {
@@ -34,6 +36,7 @@ export function SelfEsteemDay1Chat({
   sessionId,
   themeId,
   exerciseId,
+  onComplete,
 }: SelfEsteemDay1ChatProps) {
   const theme = useTheme();
   const [messages, setMessages] = useState<ChallengeMessage[]>([]);
@@ -43,6 +46,7 @@ export function SelfEsteemDay1Chat({
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const didPersistCompletion = useRef(false);
 
   const ready = messages.length > 0 && !loadingOpening;
   const userReplyCount = messages.filter((message) => message.role === 'user')
@@ -117,6 +121,10 @@ export function SelfEsteemDay1Chat({
       if (isComplete) {
         setSessionComplete(true);
         setFinalStatement(statement);
+        if (!didPersistCompletion.current) {
+          didPersistCompletion.current = true;
+          onComplete?.(statement);
+        }
       }
     } catch (caught) {
       const message =
@@ -211,13 +219,29 @@ export function SelfEsteemDay1Chat({
           </AppText>
         </Pressable>
       ) : conversationClosed ? (
-        <AppText
-          variant="caption"
-          tone="muted"
-          accessibilityHint={finalStatement ?? undefined}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            finalStatement
+              ? `Back to Home. Today's thought: ${finalStatement}`
+              : 'Back to Home'
+          }
+          onPress={() => {
+            router.replace('/home');
+          }}
+          style={[
+            styles.button,
+            {
+              backgroundColor: theme.colors.primary,
+              borderRadius: theme.radii.md,
+              padding: theme.spacing.md,
+            },
+          ]}
         >
-          That’s it for today.
-        </AppText>
+          <AppText variant="body" tone="onPrimary">
+            Back to Home
+          </AppText>
+        </Pressable>
       ) : (
         <View style={{ gap: theme.spacing.sm }}>
           <TextInput
