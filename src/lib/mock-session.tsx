@@ -30,9 +30,11 @@ import {
   unlockThemeWithBundlePurchase as unlockWithBundleInWorld,
   unlockThemeWithCredit as unlockWithCreditInWorld,
   unlockThemeWithSinglePurchase as unlockWithSingleInWorld,
+  upsertInProgressSession,
   type CompleteSessionOptions,
 } from '@/data/progression';
 import { getLocalIsoDate } from '@/lib/calendar';
+import type { ChallengeMessage } from '@/types/models';
 
 const STORAGE_KEY = 'growth.mock-world.v2';
 
@@ -55,6 +57,17 @@ function normalizeWorld(world: MockWorld): MockWorld {
     programmeMemories: Array.isArray(world.programmeMemories)
       ? world.programmeMemories
       : [],
+    sessions: Array.isArray(world.sessions)
+      ? world.sessions.map((item) => ({
+          ...item,
+          themeId:
+            item.themeId ||
+            world.challenges.find((challenge) => challenge.id === item.challengeId)
+              ?.themeId ||
+            item.themeId,
+          exerciseId: item.exerciseId || item.challengeId,
+        }))
+      : [],
   };
 }
 
@@ -74,6 +87,12 @@ type MockSessionValue = {
   setThemeCredits: (count: number) => void;
   resetEntitlements: () => void;
   completeToday: (themeId?: string, options?: CompleteSessionOptions) => void;
+  saveInProgressSession: (input: {
+    themeId: string;
+    exerciseId: string;
+    messages: ChallengeMessage[];
+    sessionId?: string;
+  }) => void;
   resetProgress: () => void;
   resetThemeProgress: (themeId: string) => void;
   setThemeDayNumber: (themeId: string, day: number) => void;
@@ -179,6 +198,20 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const saveInProgressSession = useCallback(
+    (input: {
+      themeId: string;
+      exerciseId: string;
+      messages: ChallengeMessage[];
+      sessionId?: string;
+    }) => {
+      setWorld((current) =>
+        current ? upsertInProgressSession(current, input) : current,
+      );
+    },
+    [],
+  );
+
   const resetProgress = useCallback(() => {
     setWorld((current) =>
       current ? resetAllProgress(current, getLocalIsoDate()) : current,
@@ -234,6 +267,7 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
       setThemeCredits,
       resetEntitlements,
       completeToday,
+      saveInProgressSession,
       resetProgress,
       resetThemeProgress,
       setThemeDayNumber,
@@ -255,6 +289,7 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
       setThemeCredits,
       resetEntitlements,
       completeToday,
+      saveInProgressSession,
       resetProgress,
       resetThemeProgress,
       setThemeDayNumber,

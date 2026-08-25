@@ -13,6 +13,7 @@ import {
   didCompleteThemeToday,
   getCompletedTodayChallenge,
   getHomeState,
+  getInProgressSession,
   getLatestStatementForTheme,
   getPreviousCompletions,
   getProgrammeProgress,
@@ -225,7 +226,10 @@ export default function HomeScreen() {
               ]}
             >
               <AppText variant="body" tone="onPrimary">
-                {item?.name} — {challenge.title}
+                {item?.name} —{' '}
+                {getInProgressSession(world, progress.themeId, challenge.id)
+                  ? `Continue Day ${challenge.day}`
+                  : challenge.title}
               </AppText>
             </Pressable>
           );

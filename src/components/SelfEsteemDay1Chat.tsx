@@ -24,9 +24,12 @@ type SelfEsteemDay1ChatProps = {
   themeId: string;
   exerciseId: string;
   previousMemory?: ProgrammeMemoryRecord[];
+  initialMessages?: ChallengeMessage[];
+  onHistorySave?: (messages: ChallengeMessage[]) => void;
   onComplete?: (
     finalStatement: string | null,
     memory: SendSelfEsteemMessageResult['memory'],
+    messages: ChallengeMessage[],
   ) => void;
 };
 
@@ -42,17 +45,23 @@ export function SelfEsteemDay1Chat({
   themeId,
   exerciseId,
   previousMemory = [],
+  initialMessages = [],
+  onHistorySave,
   onComplete,
 }: SelfEsteemDay1ChatProps) {
   const theme = useTheme();
-  const [messages, setMessages] = useState<ChallengeMessage[]>([]);
-  const [loadingOpening, setLoadingOpening] = useState(true);
+  const restored = initialMessages.length > 0;
+  const [messages, setMessages] = useState<ChallengeMessage[]>(
+    restored ? initialMessages : [],
+  );
+  const [loadingOpening, setLoadingOpening] = useState(!restored);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [finalStatement, setFinalStatement] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const didPersistCompletion = useRef(false);
+  const skipOpeningFetch = useRef(restored);
 
   const ready = messages.length > 0 && !loadingOpening;
   const userReplyCount = messages.filter((message) => message.role === 'user')
@@ -79,6 +88,7 @@ export function SelfEsteemDay1Chat({
         exerciseId,
       });
       setMessages([{ id: 'opening', role: 'guide', text: opening }]);
+      onHistorySave?.([{ id: 'opening', role: 'guide', text: opening }]);
     } catch (caught) {
       setMessages([]);
       setError(
@@ -90,6 +100,10 @@ export function SelfEsteemDay1Chat({
   }
 
   useEffect(() => {
+    if (skipOpeningFetch.current) {
+      skipOpeningFetch.current = false;
+      return;
+    }
     void loadOpening();
   }, [themeId, exerciseId]);
 
@@ -121,17 +135,22 @@ export function SelfEsteemDay1Chat({
           history,
           previousMemory,
         });
-      setMessages((current) => [
-        ...current,
-        { id: `guide-${Date.now()}`, role: 'guide', text: reply },
-      ]);
+      const assistantMessage: ChallengeMessage = {
+        id: `guide-${Date.now()}`,
+        role: 'guide',
+        text: reply,
+      };
+      const next = [...messages, userMessage, assistantMessage];
+      setMessages(next);
       if (isComplete) {
         setSessionComplete(true);
         setFinalStatement(statement);
         if (!didPersistCompletion.current) {
           didPersistCompletion.current = true;
-          onComplete?.(statement, memory);
+          onComplete?.(statement, memory, next);
         }
+      } else {
+        onHistorySave?.(next);
       }
     } catch (caught) {
       const message =

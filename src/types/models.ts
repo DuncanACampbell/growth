@@ -73,10 +73,14 @@ export type ChallengeSession = {
   id: string;
   userId: string;
   challengeId: string;
+  themeId?: string;
+  exerciseId?: string;
   status: ChallengeSessionStatus;
   messages: ChallengeMessage[];
   statementId: string | null;
   notes: SessionNotes | null;
+  startedAt?: string;
+  updatedAt?: string;
 };
 
 /** The sentence produced when a challenge is completed. */

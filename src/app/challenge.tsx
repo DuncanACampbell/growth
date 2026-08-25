@@ -16,6 +16,7 @@ import { getExampleStatement, getGuidedTurns } from '@/data/mock';
 import {
   getChallengeForExercise,
   getHomeState,
+  getInProgressSession,
   getPriorProgrammeMemories,
   getStatementForChallenge,
   getTodaysChallenge,
@@ -30,7 +31,7 @@ import type { ChallengeMessage } from '@/types/models';
 
 export default function ChallengeScreen() {
   const theme = useTheme();
-  const { isSignedIn, world, completeToday } = useMockSession();
+  const { isSignedIn, world, completeToday, saveInProgressSession } = useMockSession();
   const { themeId: themeIdParam, exerciseId: exerciseIdParam } = useLocalSearchParams<{
     themeId?: string;
     exerciseId?: string;
@@ -69,6 +70,7 @@ export default function ChallengeScreen() {
     return <Redirect href="/home" />;
   }
 
+  const inProgress = getInProgressSession(world, themeId, requestedExerciseId);
   const todaysChallenge = getChallengeForExercise(
     world,
     themeId,
@@ -167,7 +169,7 @@ export default function ChallengeScreen() {
             ]}
           >
             <SelfEsteemDay1Chat
-              sessionId={todaysChallenge.id}
+              sessionId={inProgress?.id ?? todaysChallenge.id}
               themeId={themeId}
               exerciseId={todaysChallenge.id}
               previousMemory={getPriorProgrammeMemories(
@@ -175,12 +177,22 @@ export default function ChallengeScreen() {
                 themeId,
                 todaysChallenge.id,
               )}
-              onComplete={(statement, memory) => {
+              initialMessages={inProgress?.messages}
+              onHistorySave={(messages) => {
+                saveInProgressSession({
+                  themeId,
+                  exerciseId: todaysChallenge.id,
+                  messages,
+                  sessionId: inProgress?.id,
+                });
+              }}
+              onComplete={(statement, memory, messages) => {
                 setKeepLiveChat(true);
                 const finalStatement =
                   statement?.trim() || memory?.reframe || '';
                 completeToday(themeId ?? undefined, {
                   finalStatement: statement,
+                  messages,
                   memory: {
                     themeId,
                     exerciseId: todaysChallenge.id,

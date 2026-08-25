@@ -14,6 +14,7 @@ import { addCalendarDays, compareIsoDates, isIsoDateOnOrBefore, isSameIsoDate } 
 import type {
   Challenge,
   ChallengeMessage,
+  ChallengeSession,
   CompletedChallenge,
   HomeState,
   IsoDate,
@@ -182,10 +183,10 @@ export function isExerciseUnlocked(
   if (day < 1 || day === Number.MAX_SAFE_INTEGER) {
     return false;
   }
-  if (progress.status === 'completed') {
+  if (isExerciseCompleted(world, exerciseId)) {
     return day <= getThemeDurationDays(themeId);
   }
-  return day <= progress.currentDay;
+  return isExerciseAvailableToStart(world, themeId, exerciseId);
 }
 
 export function isExerciseAvailableToStart(
@@ -365,7 +366,16 @@ function pruneThemeRecords(world: MockWorld, themeId: string, fromDay: number): 
   return {
     ...world,
     challenges: world.challenges.filter((item) => !removedIds.has(item.id)),
-    sessions: world.sessions.filter((item) => !removedIds.has(item.challengeId)),
+    sessions: world.sessions.filter((item) => {
+      const exerciseId = item.exerciseId || item.challengeId;
+      if (removedIds.has(item.challengeId) || removedIds.has(exerciseId)) {
+        return false;
+      }
+      if (item.themeId === themeId && exerciseSequenceNumber(exerciseId) >= fromDay) {
+        return false;
+      }
+      return true;
+    }),
     statements: world.statements.filter((item) => !removedIds.has(item.challengeId)),
     programmeMemories: (world.programmeMemories ?? []).filter(
       (item) => !removedIds.has(item.exerciseId),
@@ -517,7 +527,85 @@ export function getPriorProgrammeMemories(
 export type CompleteSessionOptions = {
   finalStatement?: string | null;
   memory?: ProgrammeMemoryRecord | null;
+  messages?: ChallengeMessage[] | null;
 };
+
+function sessionExerciseId(session: ChallengeSession): string {
+  return session.exerciseId || session.challengeId;
+}
+
+/** Incomplete live chat for this exercise. Null if completed or never started. */
+export function getInProgressSession(
+  world: MockWorld,
+  themeId: string,
+  exerciseId: string,
+): ChallengeSession | null {
+  if (isExerciseCompleted(world, exerciseId)) {
+    return null;
+  }
+  const match = world.sessions.find(
+    (item) =>
+      item.status === 'in_progress' &&
+      sessionExerciseId(item) === exerciseId &&
+      (!item.themeId || item.themeId === themeId) &&
+      item.messages.length > 0,
+  );
+  return match ?? null;
+}
+
+export function upsertInProgressSession(
+  world: MockWorld,
+  input: {
+    themeId: string;
+    exerciseId: string;
+    messages: ChallengeMessage[];
+    sessionId?: string;
+  },
+): MockWorld {
+  if (isExerciseCompleted(world, input.exerciseId) || input.messages.length === 0) {
+    return world;
+  }
+
+  const now = new Date().toISOString();
+  const existing = world.sessions.find(
+    (item) =>
+      item.status === 'in_progress' &&
+      sessionExerciseId(item) === input.exerciseId &&
+      (!item.themeId || item.themeId === input.themeId),
+  );
+  const session: ChallengeSession = {
+    id: existing?.id ?? input.sessionId ?? `session-${world.user.id}-${input.exerciseId}`,
+    userId: world.user.id,
+    challengeId: input.exerciseId,
+    themeId: input.themeId,
+    exerciseId: input.exerciseId,
+    status: 'in_progress',
+    messages: input.messages,
+    statementId: null,
+    notes: null,
+    startedAt: existing?.startedAt ?? now,
+    updatedAt: now,
+  };
+  const challenge = getChallengeForExercise(world, input.themeId, input.exerciseId);
+  const hasChallenge =
+    !challenge || world.challenges.some((item) => item.id === input.exerciseId);
+
+  return {
+    ...world,
+    challenges:
+      challenge && !hasChallenge ? [challenge, ...world.challenges] : world.challenges,
+    sessions: [
+      session,
+      ...world.sessions.filter(
+        (item) =>
+          !(
+            item.status === 'in_progress' &&
+            sessionExerciseId(item) === input.exerciseId
+          ),
+      ),
+    ],
+  };
+}
 
 export function completeThemeSession(
   world: MockWorld,
@@ -567,14 +655,26 @@ export function completeThemeSession(
     date: world.today,
     text: statementText,
   };
-  const nextSession = {
-    id: `session-${world.user.id}-${todayChallenge.id}`,
+  const live = getInProgressSession(world, themeId, todayChallenge.id);
+  const now = new Date().toISOString();
+  const sessionMessages =
+    options?.messages && options.messages.length > 0
+      ? options.messages
+      : live?.messages.length
+        ? live.messages
+        : messages;
+  const nextSession: ChallengeSession = {
+    id: live?.id ?? `session-${world.user.id}-${todayChallenge.id}`,
     userId: world.user.id,
     challengeId: todayChallenge.id,
-    status: 'completed' as const,
-    messages,
+    themeId,
+    exerciseId: todayChallenge.id,
+    status: 'completed',
+    messages: sessionMessages,
     statementId: nextStatement.id,
     notes,
+    startedAt: live?.startedAt ?? now,
+    updatedAt: now,
   };
 
   const finishedProgramme = progress.currentDay >= getThemeDurationDays(themeId);
@@ -590,7 +690,7 @@ export function completeThemeSession(
         currentDay: progress.currentDay + 1,
         status: 'active',
         currentSessionStatus: 'waiting',
-        currentSessionAvailableAt: world.today,
+        currentSessionAvailableAt: addCalendarDays(world.today, 1),
         lastCompletedAt: world.today,
       };
 
@@ -615,7 +715,12 @@ export function completeThemeSession(
     themeProgress: replaceThemeProgress(world, nextProgress),
     challenges: hasChallenge ? world.challenges : [todayChallenge, ...world.challenges],
     statements: [nextStatement, ...world.statements],
-    sessions: [nextSession, ...world.sessions],
+    sessions: [
+      nextSession,
+      ...world.sessions.filter(
+        (item) => sessionExerciseId(item) !== todayChallenge.id,
+      ),
+    ],
     programmeMemories: nextMemories,
   };
 }
