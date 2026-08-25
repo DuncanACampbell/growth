@@ -7,7 +7,6 @@ import {
   getAvailableThemes,
   getComingSoonThemes,
   getTheme,
-  type PersonaId,
 } from '@/data/mock';
 import {
   didCompleteThemeToday,
@@ -20,28 +19,13 @@ import {
   getTodaysChallenge,
   getTodaysStatement,
   getWaitingThemeProgress,
-  developerCompleteOptions,
 } from '@/data/progression';
 import { useMockSession } from '@/lib/mock-session';
 import { useTheme } from '@/theme';
 
 export default function HomeScreen() {
   const theme = useTheme();
-  const {
-    isSignedIn,
-    world,
-    signOut,
-    previewPersona,
-    completeToday,
-    resetProgress,
-    resetThemeProgress,
-    setThemeDayNumber,
-    simulateNextDay,
-    resetStreakProgress,
-    loadThreeActiveThemes,
-    purchaseTheme,
-    resetEntitlements,
-  } = useMockSession();
+  const { isSignedIn, world, signOut } = useMockSession();
 
   if (!isSignedIn || !world) {
     return <Redirect href="/login" />;
@@ -77,10 +61,6 @@ export default function HomeScreen() {
 
   function openPurchase(themeId: string) {
     router.push({ pathname: '/theme-purchase', params: { themeId } });
-  }
-
-  function switchPersona(personaId: PersonaId) {
-    previewPersona(personaId);
   }
 
   return (
@@ -340,123 +320,12 @@ export default function HomeScreen() {
         ) : null}
 
         <View style={{ gap: theme.spacing.sm }}>
-          <AppText variant="caption" tone="muted">
-            Developer controls
-          </AppText>
-          <Pressable accessibilityRole="button" onPress={loadThreeActiveThemes}>
-            <AppText variant="body" tone="primary">
-              Load 3 active themes
-            </AppText>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={simulateNextDay}>
-            <AppText variant="body" tone="primary">
-              Simulate next calendar day
-            </AppText>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={resetStreakProgress}>
-            <AppText variant="body" tone="primary">
-              Reset streak
-            </AppText>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={resetProgress}>
-            <AppText variant="body" tone="primary">
-              Reset all progress
-            </AppText>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={resetEntitlements}>
-            <AppText variant="body" tone="primary">
-              Reset purchases
-            </AppText>
-          </Pressable>
-          {lockedThemes.map((item) => (
-            <View key={`dev-purchase-${item.id}`} style={{ gap: theme.spacing.xs }}>
-              <AppText variant="caption" tone="muted">
-                {item.name}
-              </AppText>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => openPurchase(item.id)}
-              >
-                <AppText variant="body" tone="primary">
-                  Open purchase
-                </AppText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => purchaseTheme(item.id)}
-              >
-                <AppText variant="body" tone="primary">
-                  Simulate €3 purchase
-                </AppText>
-              </Pressable>
-            </View>
-          ))}
-          {owned.map((progress) => {
-            const item = getTheme(world, progress.themeId);
-            return (
-              <View key={`dev-${progress.themeId}`} style={{ gap: theme.spacing.xs }}>
-                <AppText variant="caption" tone="muted">
-                  {item?.name}
-                </AppText>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setThemeDayNumber(progress.themeId, progress.currentDay - 1)}
-                >
-                  <AppText variant="body" tone="primary">
-                    Day −
-                  </AppText>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setThemeDayNumber(progress.themeId, progress.currentDay + 1)}
-                >
-                  <AppText variant="body" tone="primary">
-                    Day +
-                  </AppText>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => {
-                    const challenge = getTodaysChallenge(world, progress.themeId);
-                    completeToday(
-                      progress.themeId,
-                      challenge
-                        ? developerCompleteOptions(progress.themeId, challenge.id)
-                        : undefined,
-                    );
-                  }}
-                >
-                  <AppText variant="body" tone="primary">
-                    Complete current session
-                  </AppText>
-                </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => resetThemeProgress(progress.themeId)}
-                  >
-                    <AppText variant="body" tone="primary">
-                      Reset to locked
-                    </AppText>
-                  </Pressable>
-              </View>
-            );
-          })}
-          <Pressable accessibilityRole="button" onPress={() => switchPersona('new')}>
-            <AppText variant="body" tone="primary">
-              New user
-            </AppText>
-          </Pressable>
           <Pressable
             accessibilityRole="button"
-            onPress={() => switchPersona('incomplete')}
+            onPress={() => router.push('/dev-controls')}
           >
-            <AppText variant="body" tone="primary">
-              One theme waiting
-            </AppText>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => switchPersona('complete')}>
-            <AppText variant="body" tone="primary">
-              One theme done today
+            <AppText variant="caption" tone="muted">
+              Dev Controls
             </AppText>
           </Pressable>
           <Pressable
@@ -467,7 +336,7 @@ export default function HomeScreen() {
             }}
           >
             <AppText variant="body" tone="muted">
-              Sign out
+              Log out
             </AppText>
           </Pressable>
         </View>
