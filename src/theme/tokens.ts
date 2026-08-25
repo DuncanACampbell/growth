@@ -14,10 +14,17 @@ export const radii = {
   sm: 8,
   md: 12,
   lg: 16,
+  xl: 24,
+  xxl: 28,
   full: 9999,
 } as const;
 
 export const typography = {
+  greeting: {
+    fontSize: 30,
+    lineHeight: 36,
+    fontWeight: '600',
+  },
   title: {
     fontSize: 28,
     lineHeight: 34,
@@ -38,6 +45,11 @@ export const typography = {
     lineHeight: 20,
     fontWeight: '400',
   },
+  label: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
+  },
 } as const;
 
 /**
@@ -46,8 +58,8 @@ export const typography = {
  */
 export const colors = {
   light: {
-    background: '#F7F7F5',
-    surface: '#FFFFFF',
+    background: '#F6EFE6',
+    surface: '#FFF9F3',
     text: '#1A1A18',
     textMuted: '#6B6B66',
     border: '#E4E4DF',
@@ -56,8 +68,8 @@ export const colors = {
     danger: '#B42318',
   },
   dark: {
-    background: '#121211',
-    surface: '#1C1C1A',
+    background: '#161310',
+    surface: '#221E1A',
     text: '#F5F5F0',
     textMuted: '#A3A39A',
     border: '#2E2E2A',

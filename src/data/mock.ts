@@ -414,7 +414,9 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
         themeId: challenge.themeId,
         exerciseId: challenge.id,
         date: today,
-        text: blueprint.exampleStatement,
+        text:
+          blueprint.exampleStatement.trim() ||
+          'I can notice today’s pattern without treating it as the whole truth.',
       },
     ],
   };

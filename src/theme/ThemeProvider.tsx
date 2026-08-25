@@ -10,10 +10,16 @@ function resolveScheme(scheme: string | null | undefined): ColorScheme {
   return scheme === 'dark' ? 'dark' : 'light';
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({
+  children,
+  scheme: schemeOverride,
+}: {
+  children: ReactNode;
+  scheme?: ColorScheme;
+}) {
   const systemScheme = useColorScheme();
   const theme = useMemo<Theme>(() => {
-    const scheme = resolveScheme(systemScheme);
+    const scheme = schemeOverride ?? resolveScheme(systemScheme);
     return {
       scheme,
       colors: colors[scheme],
@@ -21,7 +27,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       radii,
       typography,
     };
-  }, [systemScheme]);
+  }, [schemeOverride, systemScheme]);
 
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }
