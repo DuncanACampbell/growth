@@ -15,14 +15,12 @@ import {
   getHomeState,
   getInProgressSession,
   getLatestStatementForTheme,
-  getPreviousCompletions,
   getProgrammeProgress,
   getChallengeForExercise,
   getThemeCredits,
   getTodaysChallenge,
   getTodaysStatement,
   getWaitingThemeProgress,
-  isProgrammeComplete,
   developerCompleteOptions,
 } from '@/data/progression';
 import { useMockSession } from '@/lib/mock-session';
@@ -57,12 +55,7 @@ export default function HomeScreen() {
   const homeState = getHomeState(sessionWorld);
   const waiting = getWaitingThemeProgress(world);
   const owned = world.themeProgress;
-  const listedThemes = owned.filter((progress) => {
-    const waitingToday = waiting.some((entry) => entry.themeId === progress.themeId);
-    const completedToday = didCompleteThemeToday(world, progress.themeId);
-    return !(completedToday && !waitingToday);
-  });
-  const previous = getPreviousCompletions(world);
+  const listedThemes = owned;
   const unlockedIds = new Set(owned.map((item) => item.themeId));
   const availableThemes = getAvailableThemes();
   const comingSoonThemes = getComingSoonThemes();
@@ -76,6 +69,13 @@ export default function HomeScreen() {
         themeId,
         ...(challenge?.id ? { exerciseId: challenge.id } : {}),
       },
+    });
+  }
+
+  function openThemeProgress(themeId: string) {
+    router.push({
+      pathname: '/theme/[themeId]',
+      params: { themeId },
     });
   }
 
@@ -180,8 +180,10 @@ export default function HomeScreen() {
                     ? 'Waiting'
                     : `Come back tomorrow for Day ${programme.currentDay}`;
               return (
-                <View
+                <Pressable
                   key={progress.themeId}
+                  accessibilityRole="button"
+                  onPress={() => openThemeProgress(progress.themeId)}
                   style={{
                     borderColor: theme.colors.border,
                     borderRadius: theme.radii.md,
@@ -200,7 +202,7 @@ export default function HomeScreen() {
                     {programme.completedCount} of {programme.totalDays} completed · Day{' '}
                     {programme.currentDay} of {programme.totalDays} · {statusLabel}
                   </AppText>
-                </View>
+                </Pressable>
               );
             })}
           </View>
@@ -237,8 +239,7 @@ export default function HomeScreen() {
         })}
 
         {owned.map((progress) => {
-          const programmeComplete = isProgrammeComplete(world, progress.themeId);
-          if (!didCompleteThemeToday(world, progress.themeId) && !programmeComplete) {
+          if (!didCompleteThemeToday(world, progress.themeId)) {
             return null;
           }
           const latestStatement = getLatestStatementForTheme(world, progress.themeId);
@@ -286,33 +287,6 @@ export default function HomeScreen() {
             </View>
           );
         })}
-
-        {previous.length > 0 ? (
-          <View style={{ gap: theme.spacing.md }}>
-            <AppText variant="subtitle">Previous challenges</AppText>
-            {previous.map((item) => (
-              <View
-                key={item.challenge.id}
-                style={{
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radii.md,
-                  borderWidth: 1,
-                  gap: theme.spacing.xs,
-                  padding: theme.spacing.lg,
-                }}
-              >
-                <AppText variant="caption" tone="muted">
-                  {item.challenge.date} · {getTheme(world, item.challenge.themeId)?.name}
-                </AppText>
-                <AppText variant="body">{item.challenge.title}</AppText>
-                <AppText variant="caption" tone="muted">
-                  Thought of the day
-                </AppText>
-                <AppText variant="body">{item.statement.text}</AppText>
-              </View>
-            ))}
-          </View>
-        ) : null}
 
         {homeState !== 'new' ? (
           <View style={{ gap: theme.spacing.sm }}>

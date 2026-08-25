@@ -300,6 +300,54 @@ export function getTodaysStatement(
   );
 }
 
+/** Completed exercises for one theme, programme order (Day 1 first). */
+export type ThemeExerciseHistoryItem = {
+  exerciseId: string;
+  day: number;
+  title: string;
+  completedAt: IsoDate;
+  statement: string;
+  memory: ProgrammeMemoryRecord | null;
+};
+
+export function getThemeExerciseHistory(
+  world: MockWorld,
+  themeId: string,
+): ThemeExerciseHistoryItem[] {
+  const items = world.statements
+    .filter((item) => item.themeId === themeId)
+    .map((statement) => {
+      const exerciseId = statement.exerciseId || statement.challengeId;
+      const challenge = getChallengeForExercise(world, themeId, exerciseId);
+      if (!challenge) {
+        return null;
+      }
+      const memory =
+        (world.programmeMemories ?? []).find(
+          (item) => item.themeId === themeId && item.exerciseId === exerciseId,
+        ) ?? null;
+      return {
+        exerciseId,
+        day: challenge.day,
+        title: challenge.title,
+        completedAt: statement.date,
+        statement: statement.text,
+        memory,
+      } satisfies ThemeExerciseHistoryItem;
+    })
+    .filter((item): item is ThemeExerciseHistoryItem => item !== null);
+
+  const byExercise = new Map<string, ThemeExerciseHistoryItem>();
+  for (const item of items) {
+    const existing = byExercise.get(item.exerciseId);
+    if (!existing || existing.completedAt <= item.completedAt) {
+      byExercise.set(item.exerciseId, item);
+    }
+  }
+
+  return [...byExercise.values()].sort((a, b) => a.day - b.day);
+}
+
 export function getPreviousCompletions(world: MockWorld): CompletedChallenge[] {
   const latestIds = new Set(
     world.themeProgress
