@@ -21,31 +21,37 @@ export const radii = {
 
 export const typography = {
   greeting: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 30,
     lineHeight: 36,
     fontWeight: '600',
   },
   title: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 28,
     lineHeight: 34,
     fontWeight: '600',
   },
   subtitle: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 20,
     lineHeight: 26,
     fontWeight: '600',
   },
   body: {
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 16,
     lineHeight: 24,
     fontWeight: '400',
   },
   caption: {
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '400',
   },
   label: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '600',

@@ -14,6 +14,7 @@
     "emulators": "npm --prefix functions run build && npx firebase-tools emulators:start --only functions --project growth-b8456"
   },
   "dependencies": {
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.15",
     "expo-constants": "~57.0.13",

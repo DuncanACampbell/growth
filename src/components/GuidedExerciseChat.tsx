@@ -18,6 +18,7 @@ import {
   type SendGuidedExerciseMessageResult,
 } from '@/lib/firebase';
 import { useTheme } from '@/theme';
+import { appFonts } from '@/theme/fonts';
 import type { ChallengeMessage, ProgrammeMemoryRecord } from '@/types/models';
 
 type GuidedExerciseChatProps = {
@@ -296,6 +297,9 @@ export function GuidedExerciseChat({
               borderRadius: theme.radii.md,
               borderWidth: 1,
               color: theme.colors.text,
+              fontFamily: appFonts.regular,
+              fontSize: theme.typography.body.fontSize,
+              lineHeight: theme.typography.body.lineHeight,
               minHeight: 48,
               padding: theme.spacing.md,
             }}
