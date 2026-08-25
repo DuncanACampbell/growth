@@ -14,6 +14,7 @@ import {
   getSelfEsteemExerciseOpening,
   isFirebaseConfigured,
   sendSelfEsteemMessage,
+  toUserFacingGuideError,
   type SendSelfEsteemMessageResult,
 } from '@/lib/firebase';
 import { useTheme } from '@/theme';
@@ -62,6 +63,8 @@ export function SelfEsteemDay1Chat({
   const [error, setError] = useState<string | null>(null);
   const didPersistCompletion = useRef(false);
   const skipOpeningFetch = useRef(restored);
+  const sendLockRef = useRef(false);
+  const requestGenerationRef = useRef(0);
 
   const ready = messages.length > 0 && !loadingOpening;
   const userReplyCount = messages.filter((message) => message.role === 'user')
@@ -71,11 +74,15 @@ export function SelfEsteemDay1Chat({
   const canSend =
     ready && !conversationClosed && draft.trim().length > 0 && !sending;
 
+  useEffect(() => {
+    return () => {
+      requestGenerationRef.current += 1;
+    };
+  }, []);
+
   async function loadOpening() {
     if (!isFirebaseConfigured()) {
-      setError(
-        'Firebase is not configured. Add EXPO_PUBLIC_FIREBASE_* values to .env.',
-      );
+      setError(toUserFacingGuideError(new Error('unavailable'), 'opening'));
       setLoadingOpening(false);
       return;
     }
@@ -91,9 +98,7 @@ export function SelfEsteemDay1Chat({
       onHistorySave?.([{ id: 'opening', role: 'guide', text: opening }]);
     } catch (caught) {
       setMessages([]);
-      setError(
-        caught instanceof Error ? caught.message : 'Could not load today’s opening.',
-      );
+      setError(toUserFacingGuideError(caught, 'opening'));
     } finally {
       setLoadingOpening(false);
     }
@@ -109,10 +114,12 @@ export function SelfEsteemDay1Chat({
 
   async function send() {
     const text = draft.trim();
-    if (!text || sending || !ready || conversationClosed) {
+    if (!text || sendLockRef.current || sending || !ready || conversationClosed) {
       return;
     }
 
+    sendLockRef.current = true;
+    const generation = requestGenerationRef.current;
     const history = toLlmHistory(messages);
     const userMessage: ChallengeMessage = {
       id: `user-${Date.now()}`,
@@ -135,6 +142,9 @@ export function SelfEsteemDay1Chat({
           history,
           previousMemory,
         });
+      if (generation !== requestGenerationRef.current) {
+        return;
+      }
       const assistantMessage: ChallengeMessage = {
         id: `guide-${Date.now()}`,
         role: 'guide',
@@ -153,15 +163,19 @@ export function SelfEsteemDay1Chat({
         onHistorySave?.(next);
       }
     } catch (caught) {
-      const message =
-        caught instanceof Error ? caught.message : 'Could not reach the backend.';
-      setError(message);
+      if (generation !== requestGenerationRef.current) {
+        return;
+      }
+      setError(toUserFacingGuideError(caught, 'send'));
       setDraft(text);
       setMessages((current) =>
         current.filter((item) => item.id !== userMessage.id),
       );
     } finally {
-      setSending(false);
+      if (generation === requestGenerationRef.current) {
+        sendLockRef.current = false;
+        setSending(false);
+      }
     }
   }
 

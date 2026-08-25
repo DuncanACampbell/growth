@@ -87,7 +87,7 @@ export function fallbackProgrammeMemory(
       'The user was examining a harsh way of judging themselves in a specific situation.',
     reframe: finalStatement,
     memoryNote:
-      'Stay with the distinction they reached rather than asking them to rediscover it from scratch.',
+      'Do not assume they fully accepted a reframe. Work from what they actually said, not from an implied breakthrough.',
   };
 }
 

@@ -69,13 +69,17 @@ function parseTurn(raw: unknown): GuidedSessionTurn | null {
   if (typeof record.reply !== 'string' || record.reply.trim().length === 0) {
     return null;
   }
+  const trimmedReply = record.reply.trim();
+  if (trimmedReply.startsWith('{') && /"isComplete"\s*:/.test(trimmedReply)) {
+    return null;
+  }
   const isComplete = record.isComplete === true;
   const finalStatement =
     typeof record.finalStatement === 'string' && record.finalStatement.trim().length > 0
       ? record.finalStatement.trim()
       : null;
   return {
-    reply: record.reply.trim(),
+    reply: trimmedReply,
     phase: asConversationPhase(record.phase),
     isComplete,
     finalStatement,

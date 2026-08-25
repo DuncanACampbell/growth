@@ -34,6 +34,42 @@ export type GetSelfEsteemExerciseOpeningResult = {
   opening: string;
 };
 
+const OPENING_RETRY = 'Couldn’t load today’s opening. Please try again.';
+const GUIDE_RETRY = 'The guide could not reply. Please try again.';
+
+function errorCode(caught: unknown): string {
+  if (caught && typeof caught === 'object' && 'code' in caught) {
+    return String((caught as { code: unknown }).code);
+  }
+  return '';
+}
+
+function errorMessage(caught: unknown): string {
+  if (caught instanceof Error && caught.message.trim()) {
+    return caught.message.trim();
+  }
+  return '';
+}
+
+export function toUserFacingGuideError(
+  caught: unknown,
+  kind: 'send' | 'opening',
+): string {
+  const code = errorCode(caught);
+  const message = errorMessage(caught);
+
+  if (code === 'functions/failed-precondition' || message.includes('already complete')) {
+    return 'This conversation is already finished.';
+  }
+  if (kind === 'opening') {
+    return OPENING_RETRY;
+  }
+  if (message === GUIDE_RETRY || message.includes('could not reply')) {
+    return GUIDE_RETRY;
+  }
+  return GUIDE_RETRY;
+}
+
 /**
  * User-facing opening for an exercise. Does not expose guide/prompt text.
  */
@@ -43,7 +79,7 @@ export async function getSelfEsteemExerciseOpening(
   const themeId = input.themeId.trim();
   const exerciseId = input.exerciseId.trim();
   if (!themeId || !exerciseId) {
-    throw new Error('This session is missing its exercise identity.');
+    throw new Error(OPENING_RETRY);
   }
 
   const callable = httpsCallable<
@@ -55,14 +91,11 @@ export async function getSelfEsteemExerciseOpening(
     const result = await callable({ themeId, exerciseId });
     const opening = result.data.opening?.trim();
     if (!opening) {
-      throw new Error('The backend returned an empty opening.');
+      throw new Error(OPENING_RETRY);
     }
     return { opening };
   } catch (caught) {
-    if (caught instanceof Error && caught.message) {
-      throw caught;
-    }
-    throw new Error('Could not reach the Firebase backend.');
+    throw new Error(toUserFacingGuideError(caught, 'opening'));
   }
 }
 
@@ -80,7 +113,7 @@ export async function sendSelfEsteemMessage(
     throw new Error('Write a message before sending.');
   }
   if (!themeId || !exerciseId) {
-    throw new Error('This session is missing its exercise identity.');
+    throw new Error(GUIDE_RETRY);
   }
 
   const callable = httpsCallable<
@@ -100,20 +133,23 @@ export async function sendSelfEsteemMessage(
 
     const reply = result.data.reply?.trim();
     if (!reply) {
-      throw new Error('The backend returned an empty reply.');
+      throw new Error(GUIDE_RETRY);
+    }
+
+    const isComplete = result.data.isComplete === true;
+    const finalStatement = result.data.finalStatement?.trim() || null;
+    if (isComplete && !finalStatement) {
+      throw new Error(GUIDE_RETRY);
     }
 
     return {
       reply,
-      isComplete: result.data.isComplete === true,
-      finalStatement: result.data.finalStatement?.trim() || null,
+      isComplete,
+      finalStatement,
       memory: parseReturnedMemory(result.data.memory),
     };
   } catch (caught) {
-    if (caught instanceof Error && caught.message) {
-      throw caught;
-    }
-    throw new Error('Could not reach the Firebase backend.');
+    throw new Error(toUserFacingGuideError(caught, 'send'));
   }
 }
 

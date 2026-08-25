@@ -127,10 +127,7 @@ export const sendSelfEsteemMessage = onCall(
         history,
         message,
       });
-      const result = applyCompletionOverride(
-        turn,
-        mustComplete || turn.isComplete,
-      );
+      const result = applyCompletionOverride(turn, mustComplete);
       return {
         reply: result.reply,
         isComplete: result.isComplete,

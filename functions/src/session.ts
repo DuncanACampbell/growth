@@ -30,11 +30,12 @@ export function pacingInstructions(
 
 This is the FINAL user reply. You MUST close the session now.
 Set isComplete to true and phase to complete.
-Write a personalised finalStatement distilled from the user's own reframe and wording.
-Fill memory with topic, pattern, reframe, and memoryNote from this conversation.
+Write a personalised finalStatement from what is actually supported by this conversation.
+If they never accepted today's intended reframe, do not invent agreement or claim an insight they rejected. Use the most grounded useful takeaway available, even if it only names a pattern they can notice or that they do not have to settle this today.
+Fill memory with topic, pattern, reframe, and memoryNote from this conversation. Do not store a breakthrough they did not reach.
 Do not ask a question.
 Do not introduce another issue.
-Summarise the useful shift, then close.`;
+Summarise what is usable, then close.`;
   }
 
   if (userTurnNumber <= 5) {
@@ -53,6 +54,10 @@ Pacing for turns 6–7: actively guide toward today's desired insight if it has 
 
 Pacing for turn 8: consolidate the emerging reframe. Prepare to close on the next turn. Do not start a new line of inquiry.`;
 }
+
+/** Used only when the model must close and did not supply a grounded statement. */
+export const UNSETTLED_FINAL_STATEMENT =
+  "I don't have to settle this today, but I can notice when one mistake becomes a verdict on my whole character.";
 
 const QUESTION_MARK = /\?/;
 
@@ -75,17 +80,31 @@ export function applyCompletionOverride(
   turn: GuidedSessionTurn,
   mustComplete: boolean,
 ): GuidedSessionTurn {
-  if (!mustComplete) {
+  if (!mustComplete && !turn.isComplete) {
     return turn;
   }
 
   const replyWithoutQuestions = stripQuestionSentences(turn.reply);
+  const extracted =
+    extractFinalStatement(replyWithoutQuestions) ||
+    extractFinalStatement(turn.reply);
   const finalStatement =
     turn.finalStatement?.trim() ||
-    extractFinalStatement(replyWithoutQuestions) ||
-    'I can judge a situation without turning it into a verdict on who I am.';
+    extracted ||
+    (mustComplete ? UNSETTLED_FINAL_STATEMENT : null);
+
+  if (!finalStatement) {
+    throw new Error('LLM_UNAVAILABLE');
+  }
+
+  if (!mustComplete && replyWithoutQuestions.length === 0) {
+    throw new Error('LLM_UNAVAILABLE');
+  }
 
   let reply = replyWithoutQuestions;
+  if (!reply) {
+    reply = 'We can leave this unfinished rather than forcing a neat ending.';
+  }
   if (!reply.includes(finalStatement)) {
     reply = `${reply}
 
