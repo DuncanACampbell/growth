@@ -7,14 +7,14 @@ export {
   getFirestoreDb,
 } from './client';
 export {
-  getSelfEsteemExerciseOpening,
-  sendSelfEsteemMessage,
+  getGuidedExerciseOpening,
+  sendGuidedExerciseMessage,
   toUserFacingGuideError,
-} from './self-esteem';
+} from './guided-exercise';
 export type {
-  GetSelfEsteemExerciseOpeningInput,
-  GetSelfEsteemExerciseOpeningResult,
-  SelfEsteemChatTurn,
-  SendSelfEsteemMessageInput,
-  SendSelfEsteemMessageResult,
-} from './self-esteem';
+  GetGuidedExerciseOpeningInput,
+  GetGuidedExerciseOpeningResult,
+  GuidedExerciseChatTurn,
+  SendGuidedExerciseMessageInput,
+  SendGuidedExerciseMessageResult,
+} from './guided-exercise';

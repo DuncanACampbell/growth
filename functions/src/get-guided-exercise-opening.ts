@@ -2,18 +2,18 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { getDailyExercise } from './guides/index';
 
-type GetSelfEsteemExerciseOpeningRequest = {
+type GetGuidedExerciseOpeningRequest = {
   themeId?: unknown;
   exerciseId?: unknown;
 };
 
 /** Returns only the user-facing opening. Does not expose other guide text. */
-export const getSelfEsteemExerciseOpening = onCall(
+export const getGuidedExerciseOpening = onCall(
   {
     region: 'us-central1',
   },
   (request) => {
-    const data = request.data as GetSelfEsteemExerciseOpeningRequest;
+    const data = request.data as GetGuidedExerciseOpeningRequest;
     const themeId = typeof data.themeId === 'string' ? data.themeId.trim() : '';
     const exerciseId =
       typeof data.exerciseId === 'string' ? data.exerciseId.trim() : '';

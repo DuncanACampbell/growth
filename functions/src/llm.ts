@@ -87,7 +87,7 @@ function parseTurn(raw: unknown): GuidedSessionTurn | null {
   };
 }
 
-export async function generateSelfEsteemReply(input: {
+export async function generateGuidedExerciseReply(input: {
   systemPrompt: string;
   history: LlmChatTurn[];
   message: string;

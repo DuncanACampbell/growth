@@ -503,7 +503,7 @@ The finalStatement field must be that same distilled sentence: primarily the use
 
 If you must close because of the turn ceiling and they never accepted the intended reframe, do not fabricate agreement. Distil the most grounded useful takeaway that is actually supported — including a statement that they do not have to settle this today, but can notice a specific pattern. Memory must not claim a breakthrough they rejected.
 
-When isComplete is true, also fill the memory object: topic, pattern, reframe, and memoryNote. These are compact notes for later days in the same programme — not a transcript and not a personality profile. topic is the concrete issue discussed. pattern is the self-esteem pattern actually visible in what they said. reframe is the useful perspective they reached, in their meaning. memoryNote is one concise piece of continuity that could help a later conversation. Leave memory null until the session is complete.
+When isComplete is true, also fill the memory object: topic, pattern, reframe, and memoryNote. These are compact notes for later days in the same programme — not a transcript and not a personality profile. topic is the concrete issue discussed. pattern is the meaningful pattern, belief, reaction or recurring theme identified in the conversation. reframe is the useful perspective they reached, in their meaning. memoryNote is one concise piece of continuity that could help a later conversation. Leave memory null until the session is complete.
 
 ## Previous programme memory
 

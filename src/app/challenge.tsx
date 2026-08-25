@@ -11,8 +11,8 @@ import {
 
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
-import { SelfEsteemDay1Chat } from '@/components/SelfEsteemDay1Chat';
-import { getExampleStatement, getGuidedTurns } from '@/data/mock';
+import { GuidedExerciseChat } from '@/components/GuidedExerciseChat';
+import { getExampleStatement, getGuidedTurns, getProgrammeForTheme } from '@/data/mock';
 import {
   developerCompleteOptions,
   getChallengeForExercise,
@@ -88,7 +88,7 @@ export default function ChallengeScreen() {
     getStatementForChallenge(world, todaysChallenge.id) ??
     getTodaysStatement(world, todaysChallenge.id);
   const guidedTurns = getGuidedTurns(todaysChallenge.id);
-  const isSelfEsteemExercise = todaysChallenge.id.startsWith('self-esteem-');
+  const useLiveGuidedChat = Boolean(getProgrammeForTheme(themeId));
 
   const liveMessages: ChallengeMessage[] = [];
   for (let index = 0; index < turnIndex; index += 1) {
@@ -157,7 +157,7 @@ export default function ChallengeScreen() {
     );
   }
 
-  if (isSelfEsteemExercise && (canStart || keepLiveChat)) {
+  if (useLiveGuidedChat && (canStart || keepLiveChat)) {
     return (
       <Screen>
         <KeyboardAvoidingView
@@ -185,7 +185,7 @@ export default function ChallengeScreen() {
               },
             ]}
           >
-            <SelfEsteemDay1Chat
+            <GuidedExerciseChat
               sessionId={inProgress?.id ?? todaysChallenge.id}
               themeId={themeId}
               exerciseId={todaysChallenge.id}
@@ -213,10 +213,10 @@ export default function ChallengeScreen() {
                   memory: {
                     themeId,
                     exerciseId: todaysChallenge.id,
-                    topic: memory?.topic || "Today's self-esteem conversation",
+                    topic: memory?.topic || "Today's personal growth conversation",
                     pattern:
                       memory?.pattern ||
-                      'The user was examining a harsh way of judging themselves in a specific situation.',
+                      'The user was examining a meaningful pattern, belief or reaction in a specific situation.',
                     reframe: memory?.reframe || finalStatement,
                     finalStatement,
                     memoryNote:

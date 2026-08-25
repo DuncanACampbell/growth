@@ -4,33 +4,33 @@ import { getFirebaseFunctions } from './client';
 
 import type { ProgrammeMemoryRecord } from '@/types/models';
 
-export type SelfEsteemChatTurn = {
+export type GuidedExerciseChatTurn = {
   role: 'user' | 'assistant';
   text: string;
 };
 
-export type SendSelfEsteemMessageInput = {
+export type SendGuidedExerciseMessageInput = {
   message: string;
   themeId: string;
   exerciseId: string;
   sessionId?: string;
-  history: SelfEsteemChatTurn[];
+  history: GuidedExerciseChatTurn[];
   previousMemory?: ProgrammeMemoryRecord[];
 };
 
-export type SendSelfEsteemMessageResult = {
+export type SendGuidedExerciseMessageResult = {
   reply: string;
   isComplete: boolean;
   finalStatement: string | null;
   memory: Omit<ProgrammeMemoryRecord, 'themeId' | 'exerciseId' | 'finalStatement' | 'completedAt'> | null;
 };
 
-export type GetSelfEsteemExerciseOpeningInput = {
+export type GetGuidedExerciseOpeningInput = {
   themeId: string;
   exerciseId: string;
 };
 
-export type GetSelfEsteemExerciseOpeningResult = {
+export type GetGuidedExerciseOpeningResult = {
   opening: string;
 };
 
@@ -73,9 +73,9 @@ export function toUserFacingGuideError(
 /**
  * User-facing opening for an exercise. Does not expose guide/prompt text.
  */
-export async function getSelfEsteemExerciseOpening(
-  input: GetSelfEsteemExerciseOpeningInput,
-): Promise<GetSelfEsteemExerciseOpeningResult> {
+export async function getGuidedExerciseOpening(
+  input: GetGuidedExerciseOpeningInput,
+): Promise<GetGuidedExerciseOpeningResult> {
   const themeId = input.themeId.trim();
   const exerciseId = input.exerciseId.trim();
   if (!themeId || !exerciseId) {
@@ -83,9 +83,9 @@ export async function getSelfEsteemExerciseOpening(
   }
 
   const callable = httpsCallable<
-    GetSelfEsteemExerciseOpeningInput,
-    GetSelfEsteemExerciseOpeningResult
-  >(getFirebaseFunctions(), 'getSelfEsteemExerciseOpening');
+    GetGuidedExerciseOpeningInput,
+    GetGuidedExerciseOpeningResult
+  >(getFirebaseFunctions(), 'getGuidedExerciseOpening');
 
   try {
     const result = await callable({ themeId, exerciseId });
@@ -100,12 +100,12 @@ export async function getSelfEsteemExerciseOpening(
 }
 
 /**
- * Client entry for a Self-Esteem daily exercise. The UI should not know about
+ * Client entry for a guided daily exercise. The UI should not know about
  * LLM providers or prompt text — Firebase loads the guides from themeId + exerciseId.
  */
-export async function sendSelfEsteemMessage(
-  input: SendSelfEsteemMessageInput,
-): Promise<SendSelfEsteemMessageResult> {
+export async function sendGuidedExerciseMessage(
+  input: SendGuidedExerciseMessageInput,
+): Promise<SendGuidedExerciseMessageResult> {
   const message = input.message.trim();
   const themeId = input.themeId.trim();
   const exerciseId = input.exerciseId.trim();
@@ -117,9 +117,9 @@ export async function sendSelfEsteemMessage(
   }
 
   const callable = httpsCallable<
-    SendSelfEsteemMessageInput,
-    SendSelfEsteemMessageResult
-  >(getFirebaseFunctions(), 'sendSelfEsteemMessage');
+    SendGuidedExerciseMessageInput,
+    SendGuidedExerciseMessageResult
+  >(getFirebaseFunctions(), 'sendGuidedExerciseMessage');
 
   try {
     const result = await callable({
@@ -153,7 +153,7 @@ export async function sendSelfEsteemMessage(
   }
 }
 
-function parseReturnedMemory(value: unknown): SendSelfEsteemMessageResult['memory'] {
+function parseReturnedMemory(value: unknown): SendGuidedExerciseMessageResult['memory'] {
   if (value === null || value === undefined || typeof value !== 'object') {
     return null;
   }

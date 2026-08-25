@@ -11,16 +11,16 @@ import {
 
 import { AppText } from '@/components/ui/AppText';
 import {
-  getSelfEsteemExerciseOpening,
+  getGuidedExerciseOpening,
   isFirebaseConfigured,
-  sendSelfEsteemMessage,
+  sendGuidedExerciseMessage,
   toUserFacingGuideError,
-  type SendSelfEsteemMessageResult,
+  type SendGuidedExerciseMessageResult,
 } from '@/lib/firebase';
 import { useTheme } from '@/theme';
 import type { ChallengeMessage, ProgrammeMemoryRecord } from '@/types/models';
 
-type SelfEsteemDay1ChatProps = {
+type GuidedExerciseChatProps = {
   sessionId: string;
   themeId: string;
   exerciseId: string;
@@ -29,7 +29,7 @@ type SelfEsteemDay1ChatProps = {
   onHistorySave?: (messages: ChallengeMessage[]) => void;
   onComplete?: (
     finalStatement: string | null,
-    memory: SendSelfEsteemMessageResult['memory'],
+    memory: SendGuidedExerciseMessageResult['memory'],
     messages: ChallengeMessage[],
   ) => void;
 };
@@ -41,7 +41,7 @@ function toLlmHistory(messages: ChallengeMessage[]) {
   }));
 }
 
-export function SelfEsteemDay1Chat({
+export function GuidedExerciseChat({
   sessionId,
   themeId,
   exerciseId,
@@ -49,7 +49,7 @@ export function SelfEsteemDay1Chat({
   initialMessages = [],
   onHistorySave,
   onComplete,
-}: SelfEsteemDay1ChatProps) {
+}: GuidedExerciseChatProps) {
   const theme = useTheme();
   const restored = initialMessages.length > 0;
   const [messages, setMessages] = useState<ChallengeMessage[]>(
@@ -90,7 +90,7 @@ export function SelfEsteemDay1Chat({
     setLoadingOpening(true);
     setError(null);
     try {
-      const { opening } = await getSelfEsteemExerciseOpening({
+      const { opening } = await getGuidedExerciseOpening({
         themeId,
         exerciseId,
       });
@@ -134,7 +134,7 @@ export function SelfEsteemDay1Chat({
 
     try {
       const { reply, isComplete, finalStatement: statement, memory } =
-        await sendSelfEsteemMessage({
+        await sendGuidedExerciseMessage({
           message: text,
           themeId,
           exerciseId,

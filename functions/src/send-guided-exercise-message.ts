@@ -11,7 +11,7 @@ import {
   getGlobalConversationGuide,
   getThemeGuide,
 } from './guides/index';
-import { generateSelfEsteemReply, openaiApiKey, type LlmChatTurn } from './llm';
+import { generateGuidedExerciseReply, openaiApiKey, type LlmChatTurn } from './llm';
 import {
   applyCompletionOverride,
   countUserTurns,
@@ -23,7 +23,7 @@ const MAX_MESSAGE_LENGTH = 4000;
 const MAX_HISTORY_ITEMS = 40;
 const GENERIC_LLM_ERROR = 'The guide could not reply. Please try again.';
 
-type SendSelfEsteemMessageRequest = {
+type SendGuidedExerciseMessageRequest = {
   message?: unknown;
   sessionId?: unknown;
   themeId?: unknown;
@@ -64,13 +64,13 @@ function parseHistory(value: unknown): LlmChatTurn[] {
   return history;
 }
 
-export const sendSelfEsteemMessage = onCall(
+export const sendGuidedExerciseMessage = onCall(
   {
     region: 'us-central1',
     secrets: [openaiApiKey],
   },
   async (request) => {
-    const data = request.data as SendSelfEsteemMessageRequest;
+    const data = request.data as SendGuidedExerciseMessageRequest;
     const message = typeof data.message === 'string' ? data.message.trim() : '';
     const themeId = typeof data.themeId === 'string' ? data.themeId.trim() : '';
     const exerciseId =
@@ -122,7 +122,7 @@ export const sendSelfEsteemMessage = onCall(
     });
 
     try {
-      const turn = await generateSelfEsteemReply({
+      const turn = await generateGuidedExerciseReply({
         systemPrompt,
         history,
         message,
@@ -135,7 +135,7 @@ export const sendSelfEsteemMessage = onCall(
         memory: result.isComplete ? result.memory : null,
       };
     } catch (caught) {
-      logger.error('Self-esteem LLM call failed.', {
+      logger.error('Guided exercise LLM call failed.', {
         sessionId: sessionId ?? null,
         themeId,
         exerciseId,

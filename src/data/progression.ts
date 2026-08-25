@@ -8,7 +8,7 @@ import {
   getThemeDurationDays,
   type MockWorld,
 } from '@/data/mock';
-import { getMockSessionNotes } from '@/data/programmes/self-esteem-mock-conversation';
+import { MONEY_PROGRAMME } from '@/data/programmes/money';
 import { SELF_ESTEEM_PROGRAMME } from '@/data/programmes/self-esteem';
 import { addCalendarDays, compareIsoDates, isIsoDateOnOrBefore, isSameIsoDate } from '@/lib/calendar';
 import type {
@@ -530,8 +530,7 @@ export type CompleteSessionOptions = {
   messages?: ChallengeMessage[] | null;
 };
 
-const DEV_PLACEHOLDER_STATEMENT =
-  'I can notice harsh self-judgment without treating it as the whole truth.';
+const DEV_PLACEHOLDER_STATEMENT = 'Development completion placeholder.';
 
 /** Testing helper: complete the current day with a placeholder takeaway. */
 export function developerCompleteOptions(
@@ -666,10 +665,8 @@ export function completeThemeSession(
     },
   ]);
 
-  const notes = getMockSessionNotes(todayChallenge.id);
   const statementText =
     options?.finalStatement?.trim() ||
-    notes?.dailyExercise ||
     getExampleStatement(todayChallenge.id) ||
     todayChallenge.title;
   const nextStatement: StatementOfTheDay = {
@@ -698,7 +695,7 @@ export function completeThemeSession(
     status: 'completed',
     messages: sessionMessages,
     statementId: nextStatement.id,
-    notes,
+    notes: null,
     startedAt: live?.startedAt ?? now,
     updatedAt: now,
   };
@@ -839,7 +836,7 @@ export function loadThreeThemeScenario(world: MockWorld): MockWorld {
   const today = world.today;
   const specs: { themeId: string; day: number }[] = [
     { themeId: SELF_ESTEEM_PROGRAMME.themeId, day: 5 },
-    { themeId: 'theme-money', day: 8 },
+    { themeId: MONEY_PROGRAMME.themeId, day: 4 },
     { themeId: 'theme-relationships', day: 2 },
   ];
   let next = resetAllProgress(world, today);

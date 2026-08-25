@@ -1,2 +1,2 @@
-export { getSelfEsteemExerciseOpening } from './get-self-esteem-exercise-opening';
-export { sendSelfEsteemMessage } from './send-self-esteem-message';
+export { getGuidedExerciseOpening } from './get-guided-exercise-opening';
+export { sendGuidedExerciseMessage } from './send-guided-exercise-message';

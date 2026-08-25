@@ -82,9 +82,9 @@ export function fallbackProgrammeMemory(
   finalStatement: string,
 ): ProgrammeMemoryFields {
   return {
-    topic: "Today's self-esteem conversation",
+    topic: "Today's personal growth conversation",
     pattern:
-      'The user was examining a harsh way of judging themselves in a specific situation.',
+      'The user was examining a meaningful pattern, belief or reaction in a specific situation.',
     reframe: finalStatement,
     memoryNote:
       'Do not assume they fully accepted a reframe. Work from what they actually said, not from an implied breakthrough.',

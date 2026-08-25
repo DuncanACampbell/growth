@@ -11,7 +11,7 @@ import type {
 import type { ThemeProgress, UserProgress } from '@/types/progress';
 import type { DailySession, Programme } from '@/types/programme';
 
-import { SELF_ESTEEM_MOCK_CONVERSATIONS } from '@/data/programmes/self-esteem-mock-conversation';
+import { MONEY_PROGRAMME } from '@/data/programmes/money';
 import { SELF_ESTEEM_PROGRAMME } from '@/data/programmes/self-esteem';
 import { addCalendarDays } from '@/lib/calendar';
 
@@ -65,12 +65,12 @@ export const MOCK_THEMES: Theme[] = [
     currency: 'EUR',
   },
   {
-    id: 'theme-money',
+    id: MONEY_PROGRAMME.themeId,
     name: 'Money',
-    subtitle: 'Understanding beliefs, fears, habits, security, spending and abundance',
+    subtitle: 'Build a calmer, healthier relationship with money.',
     status: 'available',
-    description: 'Understanding beliefs, fears, habits, security, spending and abundance',
-    longDescription: 'Understanding beliefs, fears, habits, security, spending and abundance',
+    description: 'Build a calmer, healthier relationship with money.',
+    longDescription: 'Build a calmer, healthier relationship with money.',
     outcomes: [],
     price: EUR_PRICE,
     currency: 'EUR',
@@ -171,7 +171,7 @@ export type ChallengeBlueprint = {
   exampleStatement: string;
 };
 
-const PROGRAMMES: Programme[] = [SELF_ESTEEM_PROGRAMME];
+const PROGRAMMES: Programme[] = [SELF_ESTEEM_PROGRAMME, MONEY_PROGRAMME];
 
 export function getProgrammeForTheme(themeId: string): Programme | null {
   return PROGRAMMES.find((item) => item.themeId === themeId) ?? null;
@@ -205,7 +205,6 @@ function blueprintFromSession(
   session: DailySession,
   programme: Programme,
 ): ChallengeBlueprint {
-  const mock = SELF_ESTEEM_MOCK_CONVERSATIONS[session.id];
   const totalDays = programme.durationDays;
   const label = progressLabel(session.day, totalDays);
   return {
@@ -215,11 +214,13 @@ function blueprintFromSession(
     totalDays,
     title: session.concept,
     prompt: label,
-    turns: mock?.turns ?? [{
-      guideText: session.opening ?? '',
-      userReply: '',
-    }],
-    exampleStatement: mock?.exampleStatement ?? '',
+    turns: [
+      {
+        guideText: session.opening ?? '',
+        userReply: '',
+      },
+    ],
+    exampleStatement: '',
   };
 }
 
