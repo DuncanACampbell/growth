@@ -20,10 +20,8 @@ export type ThemeProgress = {
 
 /**
  * Account-level progress. Streak is "showed up today".
- * `themeCredits` are prepaid unlocks from a bundle — not theme ownership.
  */
 export type UserProgress = {
   currentStreak: number;
   lastActivityDate?: IsoDate;
-  themeCredits: number;
 };

@@ -19,11 +19,7 @@ export type PersonaId = 'new' | 'incomplete' | 'complete';
 
 export const THEME_DURATION_DAYS = 30;
 
-export const THEME_SINGLE_PRICE_EUR = 3;
-export const THEME_BUNDLE_PRICE_EUR = 6;
-export const THEME_BUNDLE_CREDIT_COUNT = 2;
-
-const EUR_PRICE = THEME_SINGLE_PRICE_EUR;
+export const THEME_PRICE_EUR = 3;
 
 function listedTheme(
   id: string,
@@ -39,7 +35,7 @@ function listedTheme(
     description: subtitle,
     longDescription: subtitle,
     outcomes: [],
-    price: EUR_PRICE,
+    price: THEME_PRICE_EUR,
     currency: 'EUR',
   };
 }
@@ -61,7 +57,7 @@ export const MOCK_THEMES: Theme[] = [
       'Respond to setbacks with greater perspective',
       'Practise acting with more self-respect',
     ],
-    price: EUR_PRICE,
+    price: THEME_PRICE_EUR,
     currency: 'EUR',
   },
   {
@@ -72,7 +68,7 @@ export const MOCK_THEMES: Theme[] = [
     description: 'Build a calmer, healthier relationship with money.',
     longDescription: 'Build a calmer, healthier relationship with money.',
     outcomes: [],
-    price: EUR_PRICE,
+    price: THEME_PRICE_EUR,
     currency: 'EUR',
   },
   listedTheme('theme-relationships', 'Relationships', 'Becoming a better partner and building healthier relationships', 'available'),
@@ -138,13 +134,6 @@ export function formatThemePrice(theme: Theme): string {
     return formatEuroPrice(theme.price);
   }
   return `${theme.price} ${theme.currency}`;
-}
-
-export function remainingCreditsLabel(count: number): string {
-  if (count === 1) {
-    return 'You have 1 remaining credit';
-  }
-  return `You have ${count} remaining credits`;
 }
 
 /**
@@ -366,7 +355,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
       'new',
       today,
       { id: 'user-new', displayName: 'Alex', selectedThemeId: null },
-      { currentStreak: 0, themeCredits: 0 },
+      { currentStreak: 0 },
     );
   }
 
@@ -376,7 +365,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
       'incomplete',
       today,
       { id: 'user-incomplete', displayName: 'Jordan', selectedThemeId: themeId },
-      { currentStreak: 4, themeCredits: 0 },
+      { currentStreak: 4 },
       [
         {
           themeId,
@@ -397,7 +386,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
     'complete',
     today,
     { id: 'user-complete', displayName: 'Sam', selectedThemeId: themeId },
-    { currentStreak: 12, lastActivityDate: today, themeCredits: 0 },
+    { currentStreak: 12, lastActivityDate: today },
     [
       {
         themeId,

@@ -19,17 +19,14 @@ import {
   advanceCalendarDay,
   completeTodaysChallenge,
   loadThreeThemeScenario,
+  purchaseTheme as purchaseThemeInWorld,
   resetAllProgress,
   resetEntitlements as resetEntitlementsInWorld,
   resetStreak,
   resetTheme,
   selectTheme as selectThemeInWorld,
-  setThemeCredits as setThemeCreditsInWorld,
   setThemeDay,
   shiftThemeDay,
-  unlockThemeWithBundlePurchase as unlockWithBundleInWorld,
-  unlockThemeWithCredit as unlockWithCreditInWorld,
-  unlockThemeWithSinglePurchase as unlockWithSingleInWorld,
   upsertInProgressSession,
   type CompleteSessionOptions,
 } from '@/data/progression';
@@ -42,8 +39,8 @@ function normalizeWorld(world: MockWorld): MockWorld {
   return {
     ...world,
     userProgress: {
-      ...world.userProgress,
-      themeCredits: Math.max(0, world.userProgress.themeCredits ?? 0),
+      currentStreak: world.userProgress.currentStreak,
+      lastActivityDate: world.userProgress.lastActivityDate,
     },
     statements: world.statements.map((item) => ({
       ...item,
@@ -81,10 +78,7 @@ type MockSessionValue = {
   signOut: () => void;
   previewPersona: (personaId: PersonaId) => void;
   selectTheme: (themeId: string) => void;
-  unlockThemeWithSinglePurchase: (themeId: string) => void;
-  unlockThemeWithBundlePurchase: (themeId: string) => void;
-  unlockThemeWithCredit: (themeId: string) => void;
-  setThemeCredits: (count: number) => void;
+  purchaseTheme: (themeId: string) => void;
   resetEntitlements: () => void;
   completeToday: (themeId?: string, options?: CompleteSessionOptions) => void;
   saveInProgressSession: (input: {
@@ -163,26 +157,8 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
     setWorld((current) => (current ? selectThemeInWorld(current, themeId) : current));
   }, []);
 
-  const unlockThemeWithSinglePurchase = useCallback((themeId: string) => {
-    setWorld((current) =>
-      current ? unlockWithSingleInWorld(current, themeId) : current,
-    );
-  }, []);
-
-  const unlockThemeWithBundlePurchase = useCallback((themeId: string) => {
-    setWorld((current) =>
-      current ? unlockWithBundleInWorld(current, themeId) : current,
-    );
-  }, []);
-
-  const unlockThemeWithCredit = useCallback((themeId: string) => {
-    setWorld((current) =>
-      current ? unlockWithCreditInWorld(current, themeId) : current,
-    );
-  }, []);
-
-  const setThemeCredits = useCallback((count: number) => {
-    setWorld((current) => (current ? setThemeCreditsInWorld(current, count) : current));
+  const purchaseTheme = useCallback((themeId: string) => {
+    setWorld((current) => (current ? purchaseThemeInWorld(current, themeId) : current));
   }, []);
 
   const resetEntitlements = useCallback(() => {
@@ -261,10 +237,7 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
       signOut,
       previewPersona,
       selectTheme,
-      unlockThemeWithSinglePurchase,
-      unlockThemeWithBundlePurchase,
-      unlockThemeWithCredit,
-      setThemeCredits,
+      purchaseTheme,
       resetEntitlements,
       completeToday,
       saveInProgressSession,
@@ -283,10 +256,7 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
       signOut,
       previewPersona,
       selectTheme,
-      unlockThemeWithSinglePurchase,
-      unlockThemeWithBundlePurchase,
-      unlockThemeWithCredit,
-      setThemeCredits,
+      purchaseTheme,
       resetEntitlements,
       completeToday,
       saveInProgressSession,

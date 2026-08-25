@@ -1,5 +1,4 @@
 import {
-  THEME_BUNDLE_CREDIT_COUNT,
   canPurchaseTheme,
   challengeFromBlueprint,
   getBlueprintForThemeDay,
@@ -462,71 +461,22 @@ export function unlockTheme(world: MockWorld, themeId: string): MockWorld {
   };
 }
 
-export function getThemeCredits(world: MockWorld): number {
-  return Math.max(0, world.userProgress.themeCredits ?? 0);
-}
-
-export function setThemeCredits(world: MockWorld, count: number): MockWorld {
-  return {
-    ...world,
-    userProgress: {
-      ...world.userProgress,
-      themeCredits: Math.max(0, Math.round(count)),
-    },
-  };
-}
-
-function withCredits(world: MockWorld, themeCredits: number): MockWorld {
-  return {
-    ...world,
-    userProgress: {
-      ...world.userProgress,
-      themeCredits: Math.max(0, themeCredits),
-    },
-  };
-}
-
-/** Mock €3 purchase: unlock this theme only. Credits unchanged. */
-export function unlockThemeWithSinglePurchase(world: MockWorld, themeId: string): MockWorld {
-  if (getThemeProgress(world, themeId)) {
-    return selectTheme(world, themeId);
-  }
+/** Mock €3 purchase: unlock this theme only. */
+export function purchaseTheme(world: MockWorld, themeId: string): MockWorld {
   return unlockTheme(world, themeId);
 }
 
-/** Mock €6 bundle: unlock this theme and add two credits. */
-export function unlockThemeWithBundlePurchase(world: MockWorld, themeId: string): MockWorld {
-  if (getThemeProgress(world, themeId)) {
-    return selectTheme(world, themeId);
-  }
-  const unlocked = unlockTheme(world, themeId);
-  return withCredits(unlocked, getThemeCredits(unlocked) + THEME_BUNDLE_CREDIT_COUNT);
-}
-
-/** Spend one credit to unlock this theme. No-op if owned or no credits. */
-export function unlockThemeWithCredit(world: MockWorld, themeId: string): MockWorld {
-  if (getThemeProgress(world, themeId)) {
-    return selectTheme(world, themeId);
-  }
-  const credits = getThemeCredits(world);
-  if (credits < 1) {
-    return world;
-  }
-  return withCredits(unlockTheme(world, themeId), credits - 1);
-}
-
-/** Drop ownership and credits; keep streak and calendar. */
+/** Drop theme ownership; keep streak and calendar. */
 export function resetEntitlements(world: MockWorld): MockWorld {
   const cleared = resetAllProgress(world, world.today);
   return {
     ...cleared,
     userProgress: {
-      ...world.userProgress,
-      themeCredits: 0,
+      currentStreak: world.userProgress.currentStreak,
+      lastActivityDate: world.userProgress.lastActivityDate,
     },
   };
 }
-
 
 function exerciseSequenceNumber(exerciseId: string): number {
   const match = exerciseId.match(/(\d+)$/);
@@ -854,7 +804,7 @@ export function resetAllProgress(world: MockWorld, today: IsoDate): MockWorld {
       ...world.user,
       selectedThemeId: null,
     },
-    userProgress: { currentStreak: 0, themeCredits: 0 },
+    userProgress: { currentStreak: 0 },
     themeProgress: [],
     challenges: [],
     sessions: [],
@@ -896,7 +846,6 @@ export function loadThreeThemeScenario(world: MockWorld): MockWorld {
     userProgress: {
       currentStreak: 3,
       lastActivityDate: addCalendarDays(today, -1),
-      themeCredits: 0,
     },
   };
 }

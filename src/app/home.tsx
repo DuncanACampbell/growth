@@ -17,7 +17,6 @@ import {
   getLatestStatementForTheme,
   getProgrammeProgress,
   getChallengeForExercise,
-  getThemeCredits,
   getTodaysChallenge,
   getTodaysStatement,
   getWaitingThemeProgress,
@@ -40,10 +39,7 @@ export default function HomeScreen() {
     simulateNextDay,
     resetStreakProgress,
     loadThreeActiveThemes,
-    unlockThemeWithSinglePurchase,
-    unlockThemeWithBundlePurchase,
-    unlockThemeWithCredit,
-    setThemeCredits,
+    purchaseTheme,
     resetEntitlements,
   } = useMockSession();
 
@@ -111,9 +107,6 @@ export default function HomeScreen() {
             Streak
           </AppText>
           <AppText variant="subtitle">{world.userProgress.currentStreak}</AppText>
-          <AppText variant="caption" tone="muted">
-            Theme credits {getThemeCredits(world)}
-          </AppText>
         </View>
 
         {homeState === 'new' ? (
@@ -372,22 +365,7 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable accessibilityRole="button" onPress={resetEntitlements}>
             <AppText variant="body" tone="primary">
-              Reset purchases and credits
-            </AppText>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => setThemeCredits(0)}>
-            <AppText variant="body" tone="primary">
-              Set credits to 0
-            </AppText>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => setThemeCredits(1)}>
-            <AppText variant="body" tone="primary">
-              Set credits to 1
-            </AppText>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => setThemeCredits(2)}>
-            <AppText variant="body" tone="primary">
-              Set credits to 2
+              Reset purchases
             </AppText>
           </Pressable>
           {lockedThemes.map((item) => (
@@ -405,26 +383,10 @@ export default function HomeScreen() {
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                onPress={() => unlockThemeWithSinglePurchase(item.id)}
+                onPress={() => purchaseTheme(item.id)}
               >
                 <AppText variant="body" tone="primary">
                   Simulate €3 purchase
-                </AppText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => unlockThemeWithBundlePurchase(item.id)}
-              >
-                <AppText variant="body" tone="primary">
-                  Simulate €6 bundle
-                </AppText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => unlockThemeWithCredit(item.id)}
-              >
-                <AppText variant="body" tone="primary">
-                  Unlock with one credit
                 </AppText>
               </Pressable>
             </View>
@@ -474,14 +436,6 @@ export default function HomeScreen() {
                   >
                     <AppText variant="body" tone="primary">
                       Reset to locked
-                    </AppText>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => unlockThemeWithCredit(progress.themeId)}
-                  >
-                    <AppText variant="body" tone="primary">
-                      Try credit unlock
                     </AppText>
                   </Pressable>
               </View>

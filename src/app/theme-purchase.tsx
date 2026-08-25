@@ -3,26 +3,14 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
-import {
-  THEME_BUNDLE_PRICE_EUR,
-  THEME_SINGLE_PRICE_EUR,
-  formatEuroPrice,
-  getCatalogTheme,
-  remainingCreditsLabel,
-} from '@/data/mock';
-import { getThemeCredits, getThemeProgress } from '@/data/progression';
+import { formatThemePrice, getCatalogTheme } from '@/data/mock';
+import { getThemeProgress } from '@/data/progression';
 import { useMockSession } from '@/lib/mock-session';
 import { useTheme } from '@/theme';
 
 export default function ThemePurchaseScreen() {
   const theme = useTheme();
-  const {
-    isSignedIn,
-    world,
-    unlockThemeWithSinglePurchase,
-    unlockThemeWithBundlePurchase,
-    unlockThemeWithCredit,
-  } = useMockSession();
+  const { isSignedIn, world, purchaseTheme } = useMockSession();
   const { themeId: themeIdParam } = useLocalSearchParams<{ themeId?: string }>();
   const themeId = typeof themeIdParam === 'string' ? themeIdParam : null;
   const catalogTheme = getCatalogTheme(themeId);
@@ -37,7 +25,6 @@ export default function ThemePurchaseScreen() {
 
   const selectedTheme = catalogTheme;
   const alreadyOwned = Boolean(getThemeProgress(world, selectedTheme.id));
-  const credits = getThemeCredits(world);
 
   function goBack() {
     if (router.canGoBack()) {
@@ -51,23 +38,9 @@ export default function ThemePurchaseScreen() {
     router.replace('/home');
   }
 
-  function purchaseSingle() {
+  function purchase() {
     if (!alreadyOwned) {
-      unlockThemeWithSinglePurchase(selectedTheme.id);
-    }
-    afterUnlock();
-  }
-
-  function purchaseBundle() {
-    if (!alreadyOwned) {
-      unlockThemeWithBundlePurchase(selectedTheme.id);
-    }
-    afterUnlock();
-  }
-
-  function purchaseWithCredit() {
-    if (!alreadyOwned) {
-      unlockThemeWithCredit(selectedTheme.id);
+      purchaseTheme(selectedTheme.id);
     }
     afterUnlock();
   }
@@ -129,64 +102,23 @@ export default function ThemePurchaseScreen() {
                 Continue
               </AppText>
             </Pressable>
-          ) : credits > 0 ? (
-            <View style={{ gap: theme.spacing.xs }}>
-              <Pressable
-                accessibilityRole="button"
-                onPress={purchaseWithCredit}
-                style={[
-                  styles.button,
-                  {
-                    backgroundColor: theme.colors.primary,
-                    borderRadius: theme.radii.md,
-                    padding: theme.spacing.md,
-                  },
-                ]}
-              >
-                <AppText variant="body" tone="onPrimary">
-                  Purchase with one credit
-                </AppText>
-              </Pressable>
-              <AppText variant="caption" tone="muted">
-                {remainingCreditsLabel(credits)}
-              </AppText>
-            </View>
           ) : (
-            <View style={{ gap: theme.spacing.sm }}>
-              <Pressable
-                accessibilityRole="button"
-                onPress={purchaseSingle}
-                style={[
-                  styles.button,
-                  {
-                    backgroundColor: theme.colors.primary,
-                    borderRadius: theme.radii.md,
-                    padding: theme.spacing.md,
-                  },
-                ]}
-              >
-                <AppText variant="body" tone="onPrimary">
-                  Unlock this theme for {formatEuroPrice(THEME_SINGLE_PRICE_EUR)}
-                </AppText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                onPress={purchaseBundle}
-                style={[
-                  styles.button,
-                  {
-                    borderColor: theme.colors.border,
-                    borderRadius: theme.radii.md,
-                    borderWidth: 1,
-                    padding: theme.spacing.md,
-                  },
-                ]}
-              >
-                <AppText variant="body">
-                  Unlock 3 themes for {formatEuroPrice(THEME_BUNDLE_PRICE_EUR)}
-                </AppText>
-              </Pressable>
-            </View>
+            <Pressable
+              accessibilityRole="button"
+              onPress={purchase}
+              style={[
+                styles.button,
+                {
+                  backgroundColor: theme.colors.primary,
+                  borderRadius: theme.radii.md,
+                  padding: theme.spacing.md,
+                },
+              ]}
+            >
+              <AppText variant="body" tone="onPrimary">
+                Unlock for {formatThemePrice(catalogTheme)}
+              </AppText>
+            </Pressable>
           )}
         </View>
       </ScrollView>
