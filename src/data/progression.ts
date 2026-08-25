@@ -530,6 +530,32 @@ export type CompleteSessionOptions = {
   messages?: ChallengeMessage[] | null;
 };
 
+const DEV_PLACEHOLDER_STATEMENT =
+  'I can notice harsh self-judgment without treating it as the whole truth.';
+
+/** Testing helper: complete the current day with a placeholder takeaway. */
+export function developerCompleteOptions(
+  themeId: string,
+  exerciseId: string,
+  messages?: ChallengeMessage[] | null,
+): CompleteSessionOptions {
+  return {
+    finalStatement: DEV_PLACEHOLDER_STATEMENT,
+    messages,
+    memory: {
+      themeId,
+      exerciseId,
+      topic: 'Developer placeholder completion',
+      pattern:
+        'The session was marked complete for testing without finishing the guided conversation.',
+      reframe: DEV_PLACEHOLDER_STATEMENT,
+      finalStatement: DEV_PLACEHOLDER_STATEMENT,
+      memoryNote:
+        'This day was completed with a developer placeholder. Prefer what the user says in later days.',
+    },
+  };
+}
+
 function sessionExerciseId(session: ChallengeSession): string {
   return session.exerciseId || session.challengeId;
 }

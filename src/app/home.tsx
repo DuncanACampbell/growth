@@ -23,6 +23,7 @@ import {
   getTodaysStatement,
   getWaitingThemeProgress,
   isProgrammeComplete,
+  developerCompleteOptions,
 } from '@/data/progression';
 import { useMockSession } from '@/lib/mock-session';
 import { useTheme } from '@/theme';
@@ -479,7 +480,15 @@ export default function HomeScreen() {
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => completeToday(progress.themeId)}
+                  onPress={() => {
+                    const challenge = getTodaysChallenge(world, progress.themeId);
+                    completeToday(
+                      progress.themeId,
+                      challenge
+                        ? developerCompleteOptions(progress.themeId, challenge.id)
+                        : undefined,
+                    );
+                  }}
                 >
                   <AppText variant="body" tone="primary">
                     Complete current session

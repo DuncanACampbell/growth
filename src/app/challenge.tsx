@@ -14,6 +14,7 @@ import { Screen } from '@/components/ui/Screen';
 import { SelfEsteemDay1Chat } from '@/components/SelfEsteemDay1Chat';
 import { getExampleStatement, getGuidedTurns } from '@/data/mock';
 import {
+  developerCompleteOptions,
   getChallengeForExercise,
   getHomeState,
   getInProgressSession,
@@ -140,6 +141,22 @@ export default function ChallengeScreen() {
     setAwaitingReply(true);
   }
 
+  function markCompleteForTesting() {
+    if (!themeId || !todaysChallenge) {
+      return;
+    }
+    const placeholderClose: ChallengeMessage = {
+      id: `dev-complete-${Date.now()}`,
+      role: 'guide',
+      text: 'That’s it for today. Come back tomorrow.',
+    };
+    const messages = [...(inProgress?.messages ?? []), placeholderClose];
+    completeToday(
+      themeId,
+      developerCompleteOptions(themeId, todaysChallenge.id, messages),
+    );
+  }
+
   if (isSelfEsteemExercise && (canStart || keepLiveChat)) {
     return (
       <Screen>
@@ -209,6 +226,18 @@ export default function ChallengeScreen() {
                 });
               }}
             />
+            <Pressable
+              accessibilityRole="button"
+              onPress={markCompleteForTesting}
+              style={{ alignItems: 'center', paddingVertical: theme.spacing.sm }}
+            >
+              <AppText variant="caption" tone="muted">
+                Developer
+              </AppText>
+              <AppText variant="body" tone="primary">
+                Mark conversation complete
+              </AppText>
+            </Pressable>
           </View>
         </KeyboardAvoidingView>
       </Screen>
