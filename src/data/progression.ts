@@ -114,6 +114,145 @@ function challengeForDay(
   return challengeFromBlueprint(blueprint, date);
 }
 
+export function getCompletedExerciseCount(world: MockWorld, themeId: string): number {
+  const ids = new Set(
+    world.statements
+      .filter((item) => item.themeId === themeId)
+      .map((item) => item.exerciseId || item.challengeId),
+  );
+  return ids.size;
+}
+
+export function isProgrammeComplete(world: MockWorld, themeId: string): boolean {
+  const progress = getThemeProgress(world, themeId);
+  const totalDays = getThemeDurationDays(themeId);
+  return (
+    progress?.status === 'completed' ||
+    getCompletedExerciseCount(world, themeId) >= totalDays
+  );
+}
+
+export function getCurrentExerciseDay(world: MockWorld, themeId: string): number {
+  const progress = getThemeProgress(world, themeId);
+  const totalDays = getThemeDurationDays(themeId);
+  if (!progress) {
+    return 1;
+  }
+  if (progress.status === 'completed') {
+    return totalDays;
+  }
+  return progress.currentDay;
+}
+
+export function getProgrammeProgress(
+  world: MockWorld,
+  themeId: string,
+): {
+  currentDay: number;
+  completedCount: number;
+  totalDays: number;
+  isComplete: boolean;
+} {
+  const totalDays = getThemeDurationDays(themeId);
+  return {
+    currentDay: getCurrentExerciseDay(world, themeId),
+    completedCount: getCompletedExerciseCount(world, themeId),
+    totalDays,
+    isComplete: isProgrammeComplete(world, themeId),
+  };
+}
+
+export function isExerciseCompleted(world: MockWorld, exerciseId: string): boolean {
+  return world.statements.some(
+    (item) => item.exerciseId === exerciseId || item.challengeId === exerciseId,
+  );
+}
+
+export function isExerciseUnlocked(
+  world: MockWorld,
+  themeId: string,
+  exerciseId: string,
+): boolean {
+  const progress = getThemeProgress(world, themeId);
+  if (!progress) {
+    return false;
+  }
+  const day = exerciseSequenceNumber(exerciseId);
+  if (day < 1 || day === Number.MAX_SAFE_INTEGER) {
+    return false;
+  }
+  if (progress.status === 'completed') {
+    return day <= getThemeDurationDays(themeId);
+  }
+  return day <= progress.currentDay;
+}
+
+export function isExerciseAvailableToStart(
+  world: MockWorld,
+  themeId: string,
+  exerciseId: string,
+): boolean {
+  const progress = getThemeProgress(world, themeId);
+  if (!progress || !isWaitingToday(progress, world.today)) {
+    return false;
+  }
+  return (
+    exerciseSequenceNumber(exerciseId) === progress.currentDay &&
+    !isExerciseCompleted(world, exerciseId)
+  );
+}
+
+export function getChallengeForExercise(
+  world: MockWorld,
+  themeId: string,
+  exerciseId: string,
+): Challenge | null {
+  const day = exerciseSequenceNumber(exerciseId);
+  if (day < 1 || day === Number.MAX_SAFE_INTEGER) {
+    return null;
+  }
+  const existing = world.challenges.find((item) => item.id === exerciseId);
+  const date =
+    existing?.date ??
+    world.statements.find((item) => item.exerciseId === exerciseId)?.date ??
+    world.today;
+  return challengeForDay(themeId, day, date);
+}
+
+export function getStatementForChallenge(
+  world: MockWorld,
+  challengeId: string | null,
+): StatementOfTheDay | null {
+  if (!challengeId) {
+    return null;
+  }
+  return (
+    world.statements.find(
+      (item) => item.challengeId === challengeId || item.exerciseId === challengeId,
+    ) ?? null
+  );
+}
+
+export function getLatestStatementForTheme(
+  world: MockWorld,
+  themeId: string,
+): StatementOfTheDay | null {
+  const items = world.statements.filter((item) => item.themeId === themeId);
+  if (items.length === 0) {
+    return null;
+  }
+  return (
+    items.slice().sort((a, b) => {
+      const byExercise =
+        exerciseSequenceNumber(b.exerciseId) - exerciseSequenceNumber(a.exerciseId);
+      if (byExercise !== 0) {
+        return byExercise;
+      }
+      return (b.date ?? '').localeCompare(a.date ?? '');
+    })[0] ?? null
+  );
+}
+
 /**
  * The conversation to show for a theme: a waiting session if it is due,
  * otherwise the session completed today (so Home/Challenge can still show it).
@@ -160,8 +299,13 @@ export function getTodaysStatement(
 }
 
 export function getPreviousCompletions(world: MockWorld): CompletedChallenge[] {
+  const latestIds = new Set(
+    world.themeProgress
+      .map((progress) => getLatestStatementForTheme(world, progress.themeId)?.id)
+      .filter((id): id is string => Boolean(id)),
+  );
   return world.statements
-    .filter((item) => item.date !== world.today)
+    .filter((item) => !latestIds.has(item.id))
     .map((item) => {
       const challenge = world.challenges.find((entry) => entry.id === item.challengeId);
       if (!challenge) {
@@ -348,10 +492,14 @@ export function getPriorProgrammeMemories(
   currentExerciseId: string,
 ): ProgrammeMemoryRecord[] {
   const current = exerciseSequenceNumber(currentExerciseId);
+  const completedExerciseIds = new Set(
+    world.statements.map((item) => item.exerciseId || item.challengeId),
+  );
   return (world.programmeMemories ?? [])
     .filter(
       (item) =>
         item.themeId === themeId &&
+        completedExerciseIds.has(item.exerciseId) &&
         exerciseSequenceNumber(item.exerciseId) < current,
     )
     .slice()
@@ -441,7 +589,7 @@ export function completeThemeSession(
         currentDay: progress.currentDay + 1,
         status: 'active',
         currentSessionStatus: 'waiting',
-        currentSessionAvailableAt: addCalendarDays(world.today, 1),
+        currentSessionAvailableAt: world.today,
         lastCompletedAt: world.today,
       };
 

@@ -7,18 +7,21 @@ import {
   getAvailableThemes,
   getComingSoonThemes,
   getTheme,
-  getThemeDurationDays,
   type PersonaId,
 } from '@/data/mock';
 import {
   didCompleteThemeToday,
   getCompletedTodayChallenge,
   getHomeState,
+  getLatestStatementForTheme,
   getPreviousCompletions,
+  getProgrammeProgress,
+  getChallengeForExercise,
   getThemeCredits,
   getTodaysChallenge,
   getTodaysStatement,
   getWaitingThemeProgress,
+  isProgrammeComplete,
 } from '@/data/progression';
 import { useMockSession } from '@/lib/mock-session';
 import { useTheme } from '@/theme';
@@ -48,7 +51,8 @@ export default function HomeScreen() {
     return <Redirect href="/login" />;
   }
 
-  const homeState = getHomeState(world);
+  const sessionWorld = world;
+  const homeState = getHomeState(sessionWorld);
   const waiting = getWaitingThemeProgress(world);
   const owned = world.themeProgress;
   const listedThemes = owned.filter((progress) => {
@@ -63,7 +67,14 @@ export default function HomeScreen() {
   const lockedThemes = availableThemes.filter((item) => !unlockedIds.has(item.id));
 
   function openChallenge(themeId: string) {
-    router.push({ pathname: '/challenge', params: { themeId } });
+    const challenge = getTodaysChallenge(sessionWorld, themeId);
+    router.push({
+      pathname: '/challenge',
+      params: {
+        themeId,
+        ...(challenge?.id ? { exerciseId: challenge.id } : {}),
+      },
+    });
   }
 
   function openPurchase(themeId: string) {
@@ -159,12 +170,13 @@ export default function HomeScreen() {
             {listedThemes.map((progress) => {
               const waitingToday = waiting.some((entry) => entry.themeId === progress.themeId);
               const item = getTheme(world, progress.themeId);
+              const programme = getProgrammeProgress(world, progress.themeId);
               const statusLabel =
-                progress.status === 'completed'
+                programme.isComplete
                   ? 'Completed'
                   : waitingToday
                     ? 'Waiting'
-                    : `Come back tomorrow for Day ${progress.currentDay}`;
+                    : `Come back tomorrow for Day ${programme.currentDay}`;
               return (
                 <View
                   key={progress.themeId}
@@ -183,7 +195,8 @@ export default function HomeScreen() {
                     </AppText>
                   ) : null}
                   <AppText variant="caption" tone="muted">
-                    Day {progress.currentDay} of {getThemeDurationDays(progress.themeId)} · {statusLabel}
+                    {programme.completedCount} of {programme.totalDays} completed · Day{' '}
+                    {programme.currentDay} of {programme.totalDays} · {statusLabel}
                   </AppText>
                 </View>
               );
@@ -219,11 +232,18 @@ export default function HomeScreen() {
         })}
 
         {owned.map((progress) => {
-          if (!didCompleteThemeToday(world, progress.themeId)) {
+          const programmeComplete = isProgrammeComplete(world, progress.themeId);
+          if (!didCompleteThemeToday(world, progress.themeId) && !programmeComplete) {
             return null;
           }
-          const challenge = getCompletedTodayChallenge(world, progress.themeId);
-          const todaysStatement = getTodaysStatement(world, challenge?.id ?? null);
+          const latestStatement = getLatestStatementForTheme(world, progress.themeId);
+          const challenge =
+            getCompletedTodayChallenge(world, progress.themeId) ??
+            (latestStatement
+              ? getChallengeForExercise(world, progress.themeId, latestStatement.exerciseId)
+              : null);
+          const todaysStatement =
+            getTodaysStatement(world, challenge?.id ?? null) ?? latestStatement;
           const item = getTheme(world, progress.themeId);
           const waitingToday = waiting.some((entry) => entry.themeId === progress.themeId);
           if (!challenge) {

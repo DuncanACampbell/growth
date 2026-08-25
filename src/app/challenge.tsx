@@ -1,5 +1,5 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,11 +15,15 @@ import { SelfEsteemDay1Chat } from '@/components/SelfEsteemDay1Chat';
 import { getExampleStatement, getGuidedTurns } from '@/data/mock';
 import { SELF_ESTEEM_PROGRAMME } from '@/data/programmes/self-esteem';
 import {
-  didCompleteThemeToday,
+  getChallengeForExercise,
   getHomeState,
   getPriorProgrammeMemories,
+  getStatementForChallenge,
   getTodaysChallenge,
   getTodaysStatement,
+  isExerciseAvailableToStart,
+  isExerciseCompleted,
+  isExerciseUnlocked,
 } from '@/data/progression';
 import { useMockSession } from '@/lib/mock-session';
 import { useTheme } from '@/theme';
@@ -28,7 +32,10 @@ import type { ChallengeMessage } from '@/types/models';
 export default function ChallengeScreen() {
   const theme = useTheme();
   const { isSignedIn, world, completeToday } = useMockSession();
-  const { themeId: themeIdParam } = useLocalSearchParams<{ themeId?: string }>();
+  const { themeId: themeIdParam, exerciseId: exerciseIdParam } = useLocalSearchParams<{
+    themeId?: string;
+    exerciseId?: string;
+  }>();
   const [turnIndex, setTurnIndex] = useState(0);
   const [awaitingReply, setAwaitingReply] = useState(true);
   const [keepLiveChat, setKeepLiveChat] = useState(false);
@@ -37,13 +44,49 @@ export default function ChallengeScreen() {
     (typeof themeIdParam === 'string' && themeIdParam.length > 0
       ? themeIdParam
       : world?.user.selectedThemeId) ?? null;
-  const todaysChallenge = world ? getTodaysChallenge(world, themeId) : null;
-  const alreadyComplete = world && themeId ? didCompleteThemeToday(world, themeId) : false;
-  const todaysStatement = world
-    ? getTodaysStatement(world, todaysChallenge?.id ?? null)
-    : null;
+  const availableChallenge = world ? getTodaysChallenge(world, themeId) : null;
+  const requestedFromParams =
+    typeof exerciseIdParam === 'string' && exerciseIdParam.length > 0
+      ? exerciseIdParam
+      : null;
+  const pinnedExerciseId = useRef<string | null>(requestedFromParams);
+  if (!pinnedExerciseId.current && availableChallenge?.id) {
+    pinnedExerciseId.current = availableChallenge.id;
+  }
+  const requestedExerciseId = pinnedExerciseId.current;
 
-  const guidedTurns = getGuidedTurns(todaysChallenge?.id);
+  if (!isSignedIn || !world) {
+    return <Redirect href="/login" />;
+  }
+
+  if (!themeId || getHomeState(world) === 'new') {
+    return <Redirect href="/home" />;
+  }
+
+  if (
+    !requestedExerciseId ||
+    !isExerciseUnlocked(world, themeId, requestedExerciseId)
+  ) {
+    return <Redirect href="/home" />;
+  }
+
+  const todaysChallenge = getChallengeForExercise(
+    world,
+    themeId,
+    requestedExerciseId,
+  );
+  if (!todaysChallenge) {
+    return <Redirect href="/home" />;
+  }
+
+  const canStart = isExerciseAvailableToStart(world, themeId, requestedExerciseId);
+  const exerciseComplete = isExerciseCompleted(world, requestedExerciseId);
+  const showCompletion = exerciseComplete && !keepLiveChat;
+  const todaysStatement =
+    getStatementForChallenge(world, todaysChallenge.id) ??
+    getTodaysStatement(world, todaysChallenge.id);
+  const guidedTurns = getGuidedTurns(todaysChallenge.id);
+  const isSelfEsteemExercise = todaysChallenge.id.startsWith('self-esteem-');
 
   const liveMessages: ChallengeMessage[] = [];
   for (let index = 0; index < turnIndex; index += 1) {
@@ -78,19 +121,6 @@ export default function ChallengeScreen() {
     }
   }
 
-  if (!isSignedIn || !world) {
-    return <Redirect href="/login" />;
-  }
-
-  if (!todaysChallenge || getHomeState(world) === 'new') {
-    return <Redirect href="/home" />;
-  }
-
-  const showCompletion = alreadyComplete;
-  const isSelfEsteemExercise =
-    typeof todaysChallenge.id === 'string' &&
-    todaysChallenge.id.startsWith('self-esteem-');
-
   function sendMockReply() {
     const current = guidedTurns[turnIndex];
     if (!current) {
@@ -109,7 +139,7 @@ export default function ChallengeScreen() {
     setAwaitingReply(true);
   }
 
-  if (isSelfEsteemExercise && (!showCompletion || keepLiveChat)) {
+  if (isSelfEsteemExercise && (canStart || keepLiveChat)) {
     return (
       <Screen>
         <KeyboardAvoidingView
