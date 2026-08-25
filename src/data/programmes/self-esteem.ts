@@ -3,7 +3,7 @@ import type { Programme } from '@/types/programme';
 /** Source of truth for the Building Self-Esteem programme (7 daily sessions). */
 export const SELF_ESTEEM_PROGRAMME: Programme = {
   id: 'self-esteem',
-  themeId: 'theme-presence',
+  themeId: 'self-esteem',
   title: "Building Self-Esteem",
   durationDays: 7,
 

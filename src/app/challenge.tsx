@@ -13,7 +13,6 @@ import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import { SelfEsteemDay1Chat } from '@/components/SelfEsteemDay1Chat';
 import { getExampleStatement, getGuidedTurns } from '@/data/mock';
-import { SELF_ESTEEM_PROGRAMME } from '@/data/programmes/self-esteem';
 import {
   getChallengeForExercise,
   getHomeState,
@@ -169,11 +168,11 @@ export default function ChallengeScreen() {
           >
             <SelfEsteemDay1Chat
               sessionId={todaysChallenge.id}
-              themeId={SELF_ESTEEM_PROGRAMME.id}
+              themeId={themeId}
               exerciseId={todaysChallenge.id}
               previousMemory={getPriorProgrammeMemories(
                 world,
-                SELF_ESTEEM_PROGRAMME.id,
+                themeId,
                 todaysChallenge.id,
               )}
               onComplete={(statement, memory) => {
@@ -183,7 +182,7 @@ export default function ChallengeScreen() {
                 completeToday(themeId ?? undefined, {
                   finalStatement: statement,
                   memory: {
-                    themeId: SELF_ESTEEM_PROGRAMME.id,
+                    themeId,
                     exerciseId: todaysChallenge.id,
                     topic: memory?.topic || "Today's self-esteem conversation",
                     pattern:

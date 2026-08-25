@@ -34,7 +34,7 @@ import {
 } from '@/data/progression';
 import { getLocalIsoDate } from '@/lib/calendar';
 
-const STORAGE_KEY = 'growth.mock-world.v1';
+const STORAGE_KEY = 'growth.mock-world.v2';
 
 function normalizeWorld(world: MockWorld): MockWorld {
   return {

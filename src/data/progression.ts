@@ -9,6 +9,7 @@ import {
   type MockWorld,
 } from '@/data/mock';
 import { getMockSessionNotes } from '@/data/programmes/self-esteem-mock-conversation';
+import { SELF_ESTEEM_PROGRAMME } from '@/data/programmes/self-esteem';
 import { addCalendarDays, compareIsoDates, isIsoDateOnOrBefore, isSameIsoDate } from '@/lib/calendar';
 import type {
   Challenge,
@@ -706,7 +707,7 @@ export function advanceCalendarDay(world: MockWorld): MockWorld {
 export function loadThreeThemeScenario(world: MockWorld): MockWorld {
   const today = world.today;
   const specs: { themeId: string; day: number }[] = [
-    { themeId: 'theme-presence', day: 5 },
+    { themeId: SELF_ESTEEM_PROGRAMME.themeId, day: 5 },
     { themeId: 'theme-money', day: 8 },
     { themeId: 'theme-relationships', day: 2 },
   ];

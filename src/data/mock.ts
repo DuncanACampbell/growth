@@ -46,7 +46,7 @@ function listedTheme(
 
 export const MOCK_THEMES: Theme[] = [
   {
-    id: 'theme-presence',
+    id: SELF_ESTEEM_PROGRAMME.themeId,
     name: 'Building Self-Esteem',
     subtitle: 'Building a kinder, more realistic view of yourself',
     status: 'available',
@@ -370,7 +370,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
   }
 
   if (personaId === 'incomplete') {
-    const themeId = 'theme-presence';
+    const themeId = SELF_ESTEEM_PROGRAMME.themeId;
     return emptyWorld(
       'incomplete',
       today,
@@ -389,7 +389,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
     );
   }
 
-  const themeId = 'theme-presence';
+  const themeId = SELF_ESTEEM_PROGRAMME.themeId;
   const completedDay = 3;
   const blueprint = getBlueprintForThemeDay(themeId, completedDay);
   const world = emptyWorld(
