@@ -3,8 +3,8 @@ import { Pressable, ScrollView, View } from 'react-native';
 
 import { CompletedExerciseCard } from '@/components/home/CompletedExerciseCard';
 import { IdleThemeCard } from '@/components/home/IdleThemeCard';
+import { StreakBadge } from '@/components/home/StreakBadge';
 import { TodayExerciseCard } from '@/components/home/TodayExerciseCard';
-import { WeeklyStreak } from '@/components/home/WeeklyStreak';
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import {
@@ -25,7 +25,6 @@ import {
   getTodaysStatement,
   getWaitingThemeProgress,
 } from '@/data/progression';
-import { getWeekStripDays } from '@/lib/week-streak';
 import { useMockSession } from '@/lib/mock-session';
 import { ThemeProvider, useTheme } from '@/theme';
 import type { Challenge, Theme as CatalogTheme } from '@/types/models';
@@ -85,12 +84,6 @@ function HomeScreenContent() {
   const availableThemes = getAvailableThemes();
   const comingSoonThemes = getComingSoonThemes();
   const lockedThemes = availableThemes.filter((item) => !unlockedIds.has(item.id));
-  const weekDays = getWeekStripDays({
-    today: world.today,
-    currentStreak: world.userProgress.currentStreak,
-    lastActivityDate: world.userProgress.lastActivityDate,
-    activityDates: world.statements.map((item) => item.date),
-  });
 
   const todayItems: TodayItem[] = [];
   const waitingItems: TodayItem[] = [];
@@ -226,48 +219,46 @@ function HomeScreenContent() {
           gap: theme.spacing.xxl,
         }}
       >
-        <View
-          style={{
-            alignItems: 'flex-start',
-            flexDirection: 'row',
-            gap: theme.spacing.md,
-            justifyContent: 'space-between',
-          }}
-        >
-          <AppText variant="greeting" style={{ flex: 1, paddingRight: theme.spacing.sm }}>
-            {greetingForName(sessionWorld.user.displayName)}
-          </AppText>
-          <View style={{ alignItems: 'flex-end', gap: theme.spacing.xs }}>
-            <Pressable
-              accessibilityRole="button"
-              hitSlop={6}
-              onPress={() => router.push('/dev-controls')}
-              style={{ minHeight: 44, justifyContent: 'center' }}
-            >
-              <AppText variant="caption" tone="muted">
-                Dev Controls
-              </AppText>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              hitSlop={6}
-              onPress={() => {
-                signOut();
-                router.replace('/login');
-              }}
-              style={{ minHeight: 44, justifyContent: 'center' }}
-            >
-              <AppText variant="caption" tone="muted">
-                Log out
-              </AppText>
-            </Pressable>
+        <View style={{ gap: theme.spacing.md }}>
+          <View
+            style={{
+              alignItems: 'flex-start',
+              flexDirection: 'row',
+              gap: theme.spacing.md,
+              justifyContent: 'space-between',
+            }}
+          >
+            <AppText variant="greeting" style={{ flex: 1, paddingRight: theme.spacing.sm }}>
+              {greetingForName(sessionWorld.user.displayName)}
+            </AppText>
+            <View style={{ alignItems: 'flex-end', gap: theme.spacing.xs }}>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={6}
+                onPress={() => router.push('/dev-controls')}
+                style={{ minHeight: 44, justifyContent: 'center' }}
+              >
+                <AppText variant="caption" tone="muted">
+                  Dev Controls
+                </AppText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                hitSlop={6}
+                onPress={() => {
+                  signOut();
+                  router.replace('/login');
+                }}
+                style={{ minHeight: 44, justifyContent: 'center' }}
+              >
+                <AppText variant="caption" tone="muted">
+                  Log out
+                </AppText>
+              </Pressable>
+            </View>
           </View>
+          <StreakBadge currentStreak={sessionWorld.userProgress.currentStreak} />
         </View>
-
-        <WeeklyStreak
-          days={weekDays}
-          currentStreak={sessionWorld.userProgress.currentStreak}
-        />
 
         {homeState === 'new' ? (
           <View style={{ gap: theme.spacing.lg }}>
