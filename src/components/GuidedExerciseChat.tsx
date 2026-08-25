@@ -2,13 +2,13 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from 'react-native';
 
+import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import {
   getGuidedExerciseOpening,
@@ -241,27 +241,17 @@ export function GuidedExerciseChat({
       ) : null}
 
       {!ready && !loadingOpening ? (
-        <Pressable
-          accessibilityRole="button"
+        <AppButton
+          fullWidth
           onPress={() => {
             void loadOpening();
           }}
-          style={[
-            styles.button,
-            {
-              backgroundColor: theme.colors.primary,
-              borderRadius: theme.radii.md,
-              padding: theme.spacing.md,
-            },
-          ]}
         >
-          <AppText variant="body" tone="onPrimary">
-            Try again
-          </AppText>
-        </Pressable>
+          Try again
+        </AppButton>
       ) : conversationClosed ? (
-        <Pressable
-          accessibilityRole="button"
+        <AppButton
+          fullWidth
           accessibilityLabel={
             finalStatement
               ? `Back to Home. Today's thought: ${finalStatement}`
@@ -270,19 +260,9 @@ export function GuidedExerciseChat({
           onPress={() => {
             router.replace('/home');
           }}
-          style={[
-            styles.button,
-            {
-              backgroundColor: theme.colors.primary,
-              borderRadius: theme.radii.md,
-              padding: theme.spacing.md,
-            },
-          ]}
         >
-          <AppText variant="body" tone="onPrimary">
-            Back to Home
-          </AppText>
-        </Pressable>
+          Back to Home
+        </AppButton>
       ) : (
         <View style={{ gap: theme.spacing.sm }}>
           <TextInput
@@ -304,26 +284,15 @@ export function GuidedExerciseChat({
               padding: theme.spacing.md,
             }}
           />
-          <Pressable
-            accessibilityRole="button"
+          <AppButton
+            fullWidth
             disabled={!canSend}
             onPress={() => {
               void send();
             }}
-            style={[
-              styles.button,
-              {
-                backgroundColor: canSend ? theme.colors.primary : theme.colors.surface,
-                borderRadius: theme.radii.md,
-                opacity: canSend ? 1 : 0.6,
-                padding: theme.spacing.md,
-              },
-            ]}
           >
-            <AppText variant="body" tone={canSend ? 'onPrimary' : 'muted'}>
-              {sending ? 'Sending…' : error ? 'Try again' : 'Send'}
-            </AppText>
-          </Pressable>
+            {sending ? 'Sending…' : error ? 'Try again' : 'Send'}
+          </AppButton>
         </View>
       )}
     </View>
@@ -331,9 +300,6 @@ export function GuidedExerciseChat({
 }
 
 const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-  },
   column: {
     flex: 1,
     gap: 16,

@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native';
+import { Pressable } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import type { CatalogThemeVisual } from '@/data/theme-visuals';
@@ -11,6 +11,27 @@ type CompletedExerciseCardProps = {
   onOpenTheme: () => void;
 };
 
+/** Strip wrapping quotes for display only; does not alter stored statement text. */
+function displayStatement(statement: string): string {
+  const trimmed = statement.trim();
+  const pairs: [string, string][] = [
+    ['"', '"'],
+    ['\u201C', '\u201D'],
+    ['\u2018', '\u2019'],
+    ["'", "'"],
+  ];
+  for (const [open, close] of pairs) {
+    if (
+      trimmed.length >= 2 &&
+      trimmed.startsWith(open) &&
+      trimmed.endsWith(close)
+    ) {
+      return trimmed.slice(open.length, -close.length).trim();
+    }
+  }
+  return trimmed;
+}
+
 export function CompletedExerciseCard({
   themeName,
   statement,
@@ -18,48 +39,47 @@ export function CompletedExerciseCard({
   onOpenTheme,
 }: CompletedExerciseCardProps) {
   const theme = useTheme();
+  const takeaway = statement ? displayStatement(statement) : '';
 
   return (
-    <View
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${themeName}, open theme`}
+      onPress={onOpenTheme}
       style={{
         backgroundColor: visual.tint,
         borderRadius: theme.radii.xxl,
-        gap: theme.spacing.md,
+        gap: theme.spacing.lg,
         opacity: 0.92,
-        padding: theme.spacing.xl,
+        paddingHorizontal: theme.spacing.xl,
+        paddingVertical: theme.spacing.xxl,
       }}
     >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${themeName}, open theme`}
-        hitSlop={8}
-        onPress={onOpenTheme}
-        style={{ minHeight: 44, justifyContent: 'center' }}
-      >
+      {takeaway ? (
         <AppText
-          variant="caption"
-          style={{ color: visual.accent, fontWeight: '600' }}
-          numberOfLines={2}
+          variant="subtitle"
+          style={{
+            color: visual.onTint,
+            fontSize: 22,
+            fontWeight: '600',
+            lineHeight: 32,
+            textAlign: 'center',
+          }}
         >
-          {themeName}
+          {takeaway}
         </AppText>
-      </Pressable>
-      <AppText variant="body" style={{ color: visual.onTint }}>
-        ✓ Done for today
-      </AppText>
-      {statement ? (
-        <View style={{ gap: theme.spacing.xs }}>
-          <AppText
-            variant="label"
-            style={{ color: visual.onTint, letterSpacing: 0.6, opacity: 0.7 }}
-          >
-            TODAY’S STATEMENT
-          </AppText>
-          <AppText variant="subtitle" style={{ color: visual.onTint }}>
-            “{statement}”
-          </AppText>
-        </View>
       ) : null}
-    </View>
+
+      <AppText
+        variant="caption"
+        style={{
+          color: theme.colors.textMuted,
+          fontWeight: '500',
+          textAlign: 'center',
+        }}
+      >
+        {themeName} · Come back tomorrow
+      </AppText>
+    </Pressable>
   );
 }

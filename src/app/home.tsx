@@ -1,10 +1,12 @@
 import { Redirect, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { CompletedExerciseCard } from '@/components/home/CompletedExerciseCard';
 import { IdleThemeCard } from '@/components/home/IdleThemeCard';
 import { StreakBadge } from '@/components/home/StreakBadge';
 import { TodayExerciseCard } from '@/components/home/TodayExerciseCard';
+import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import {
@@ -165,176 +167,216 @@ function HomeScreenContent() {
 
   function catalogRow(item: CatalogTheme, disabled: boolean) {
     const visual = getCatalogThemeVisual(item.id, theme.scheme);
-    const content = (
-      <View
-        style={{
-          backgroundColor: visual.tint,
-          borderRadius: theme.radii.xxl,
-          gap: theme.spacing.xs,
-          minHeight: 72,
-          opacity: disabled ? 0.65 : 1,
-          padding: theme.spacing.xl,
-        }}
-      >
-        <AppText variant="body" style={{ color: visual.onTint, fontWeight: '600' }}>
-          {item.name}
-        </AppText>
-        <AppText variant="caption" style={{ color: visual.onTint, opacity: 0.8 }}>
-          {item.subtitle}
-        </AppText>
-        {disabled ? (
-          <AppText variant="caption" style={{ color: visual.onTint, opacity: 0.7 }}>
-            Coming soon
-          </AppText>
-        ) : null}
-      </View>
-    );
 
     if (disabled) {
       return (
-        <View key={item.id} accessibilityState={{ disabled: true }}>
-          {content}
+        <View
+          key={item.id}
+          accessibilityState={{ disabled: true }}
+          style={{
+            backgroundColor: visual.tint,
+            borderRadius: theme.radii.xxl,
+            gap: theme.spacing.xs,
+            minHeight: 72,
+            opacity: 0.65,
+            padding: theme.spacing.xl,
+          }}
+        >
+          <AppText variant="body" style={{ color: visual.onTint, fontWeight: '600' }}>
+            {item.name}
+          </AppText>
+          <AppText variant="caption" style={{ color: visual.onTint, opacity: 0.8 }}>
+            {item.subtitle}
+          </AppText>
+          <AppText variant="caption" style={{ color: visual.onTint, opacity: 0.7 }}>
+            Coming soon
+          </AppText>
         </View>
       );
     }
 
     return (
-      <Pressable
+      <View
         key={item.id}
-        accessibilityRole="button"
-        onPress={() => openPurchase(item.id)}
+        style={{
+          alignItems: 'center',
+          backgroundColor: visual.tint,
+          borderRadius: theme.radii.xxl,
+          flexDirection: 'row',
+          gap: theme.spacing.md,
+          minHeight: 72,
+          paddingHorizontal: theme.spacing.xl,
+          paddingVertical: theme.spacing.lg,
+        }}
       >
-        {content}
-      </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Learn more about ${item.name}`}
+          onPress={() => openPurchase(item.id)}
+          style={{ flex: 1, gap: theme.spacing.xs, minHeight: 48, justifyContent: 'center' }}
+        >
+          <AppText variant="body" style={{ color: visual.onTint, fontWeight: '600' }}>
+            {item.name}
+          </AppText>
+          <AppText variant="caption" style={{ color: visual.onTint, opacity: 0.8 }}>
+            {item.subtitle}
+          </AppText>
+        </Pressable>
+        <AppButton
+          circular
+          accessibilityLabel={`Learn more about ${item.name}`}
+          onPress={() => openPurchase(item.id)}
+          leadingIcon={
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color={theme.colors.buttonOnPrimary}
+            />
+          }
+        />
+      </View>
     );
   }
 
   return (
     <Screen>
-      <ScrollView
-        contentContainerStyle={{
-          paddingHorizontal: theme.spacing.xl,
-          paddingVertical: theme.spacing.lg,
-          paddingBottom: theme.spacing.xxxl,
-          gap: theme.spacing.xxl,
-        }}
-      >
-        <View style={{ gap: theme.spacing.md }}>
-          <View
-            style={{
-              alignItems: 'flex-start',
-              flexDirection: 'row',
-              gap: theme.spacing.md,
-              justifyContent: 'space-between',
-            }}
-          >
-            <AppText variant="greeting" style={{ flex: 1, paddingRight: theme.spacing.sm }}>
+      <View style={{ flex: 1 }}>
+        <AppButton
+          variant="secondary"
+          accessibilityLabel="Dev Controls"
+          onPress={() => router.push('/dev-controls')}
+          leadingIcon={
+            <Ionicons name="hammer-outline" size={18} color="#C9C3B8" />
+          }
+          style={{
+            backgroundColor: '#F1EBE3',
+            borderColor: 'transparent',
+            borderWidth: 0,
+            position: 'absolute',
+            right: theme.spacing.md,
+            top: theme.spacing.sm,
+            zIndex: 2,
+          }}
+        />
+
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingHorizontal: theme.spacing.xl,
+            paddingVertical: theme.spacing.lg,
+            paddingBottom: theme.spacing.xxl,
+            gap: theme.spacing.xxl,
+          }}
+        >
+          <View style={{ gap: theme.spacing.md, paddingRight: 56 }}>
+            <AppText variant="greeting">
               {greetingForName(sessionWorld.user.displayName)}
             </AppText>
-            <View style={{ alignItems: 'flex-end', gap: theme.spacing.xs }}>
-              <Pressable
-                accessibilityRole="button"
-                hitSlop={6}
-                onPress={() => router.push('/dev-controls')}
-                style={{ minHeight: 44, justifyContent: 'center' }}
-              >
-                <AppText variant="caption" tone="muted">
-                  Dev Controls
-                </AppText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                hitSlop={6}
-                onPress={() => {
-                  signOut();
-                  router.replace('/login');
-                }}
-                style={{ minHeight: 44, justifyContent: 'center' }}
-              >
-                <AppText variant="caption" tone="muted">
-                  Log out
-                </AppText>
-              </Pressable>
-            </View>
+            <StreakBadge currentStreak={sessionWorld.userProgress.currentStreak} />
           </View>
-          <StreakBadge currentStreak={sessionWorld.userProgress.currentStreak} />
-        </View>
 
-        {homeState === 'new' ? (
-          <View style={{ gap: theme.spacing.lg }}>
-            <View style={{ gap: theme.spacing.xs }}>
-              <AppText variant="title">Today</AppText>
-              <AppText variant="body" tone="muted">
-                Choose a theme to unlock your first conversation.
-              </AppText>
-            </View>
-            {availableThemes.map((item) => catalogRow(item, false))}
-            {comingSoonThemes.map((item) => catalogRow(item, true))}
-          </View>
-        ) : (
-          <View style={{ gap: theme.spacing.lg }}>
-            <AppText variant="title">Today</AppText>
-            {todayItems.map((item) => {
-              const catalog = getTheme(sessionWorld, item.progress.themeId);
-              const visual = getCatalogThemeVisual(item.progress.themeId, theme.scheme);
-              const themeName = catalog?.name ?? item.progress.themeId;
-              if (item.kind === 'waiting') {
-                return (
-                  <TodayExerciseCard
-                    key={`wait-${item.progress.themeId}`}
-                    themeName={themeName}
-                    day={item.challenge.day}
-                    totalDays={item.challenge.totalDays}
-                    title={item.challenge.title}
-                    subtitle={catalog?.subtitle}
-                    actionLabel={item.inProgress ? 'Continue' : 'Start'}
-                    visual={visual}
-                    onOpenTheme={() => openThemeProgress(item.progress.themeId)}
-                    onStart={() => openChallenge(item.progress.themeId)}
-                  />
-                );
-              }
-              if (item.kind === 'done') {
-                return (
-                  <CompletedExerciseCard
-                    key={`done-${item.progress.themeId}`}
-                    themeName={themeName}
-                    statement={item.statement}
-                    visual={visual}
-                    onOpenTheme={() => openThemeProgress(item.progress.themeId)}
-                  />
-                );
-              }
-              return (
-                <IdleThemeCard
-                  key={`idle-${item.progress.themeId}`}
-                  themeName={themeName}
-                  message={item.message}
-                  visual={visual}
-                  onOpenTheme={() => openThemeProgress(item.progress.themeId)}
-                />
-              );
-            })}
-          </View>
-        )}
-
-        {homeState !== 'new' ? (
-          <View style={{ gap: theme.spacing.lg }}>
-            {lockedThemes.length > 0 ? (
-              <View style={{ gap: theme.spacing.md }}>
-                <AppText variant="subtitle">Unlock another theme</AppText>
-                {lockedThemes.map((item) => catalogRow(item, false))}
+          {homeState === 'new' ? (
+            <View style={{ gap: theme.spacing.lg }}>
+              <View style={{ gap: theme.spacing.xs }}>
+                <AppText variant="title">Today</AppText>
+                <AppText variant="body" tone="muted">
+                  Choose a theme to unlock your first conversation.
+                </AppText>
               </View>
-            ) : null}
-            <View style={{ gap: theme.spacing.md }}>
-              <AppText variant="caption" tone="muted">
-                Coming soon
-              </AppText>
+              {availableThemes.map((item) => catalogRow(item, false))}
               {comingSoonThemes.map((item) => catalogRow(item, true))}
             </View>
+          ) : (
+            <View style={{ gap: theme.spacing.lg }}>
+              <AppText variant="title">Today</AppText>
+              {todayItems.map((item) => {
+                const catalog = getTheme(sessionWorld, item.progress.themeId);
+                const visual = getCatalogThemeVisual(item.progress.themeId, theme.scheme);
+                const themeName = catalog?.name ?? item.progress.themeId;
+                if (item.kind === 'waiting') {
+                  return (
+                    <TodayExerciseCard
+                      key={`wait-${item.progress.themeId}`}
+                      themeName={themeName}
+                      day={item.challenge.day}
+                      totalDays={item.challenge.totalDays}
+                      title={item.challenge.title}
+                      subtitle={catalog?.subtitle}
+                      actionLabel={item.inProgress ? 'Continue' : 'Start'}
+                      visual={visual}
+                      onOpenTheme={() => openThemeProgress(item.progress.themeId)}
+                      onStart={() => openChallenge(item.progress.themeId)}
+                    />
+                  );
+                }
+                if (item.kind === 'done') {
+                  return (
+                    <CompletedExerciseCard
+                      key={`done-${item.progress.themeId}`}
+                      themeName={themeName}
+                      statement={item.statement}
+                      visual={visual}
+                      onOpenTheme={() => openThemeProgress(item.progress.themeId)}
+                    />
+                  );
+                }
+                return (
+                  <IdleThemeCard
+                    key={`idle-${item.progress.themeId}`}
+                    themeName={themeName}
+                    message={item.message}
+                    visual={visual}
+                    onOpenTheme={() => openThemeProgress(item.progress.themeId)}
+                  />
+                );
+              })}
+            </View>
+          )}
+
+          {homeState !== 'new' ? (
+            <View style={{ gap: theme.spacing.lg }}>
+              {lockedThemes.length > 0 ? (
+                <View style={{ gap: theme.spacing.md }}>
+                  <AppText variant="subtitle">Unlock another theme</AppText>
+                  {lockedThemes.map((item) => catalogRow(item, false))}
+                </View>
+              ) : null}
+              <View style={{ gap: theme.spacing.md }}>
+                <AppText variant="caption" tone="muted">
+                  Coming soon
+                </AppText>
+                {comingSoonThemes.map((item) => catalogRow(item, true))}
+              </View>
+            </View>
+          ) : null}
+
+          <View
+            style={{
+              alignItems: 'center',
+              marginTop: 'auto',
+              paddingTop: theme.spacing.xl,
+            }}
+          >
+            <AppButton
+              variant="secondary"
+              accessibilityLabel="Log out"
+              onPress={() => {
+                signOut();
+                router.replace('/login');
+              }}
+              leadingIcon={
+                <Ionicons
+                  name="log-out-outline"
+                  size={18}
+                  color={theme.colors.buttonOnSecondary}
+                />
+              }
+            >
+              Log out
+            </AppButton>
           </View>
-        ) : null}
-      </ScrollView>
+        </ScrollView>
+      </View>
     </Screen>
   );
 }

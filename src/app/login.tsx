@@ -1,6 +1,7 @@
 import { Redirect, router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import type { PersonaId } from '@/data/mock';
@@ -39,40 +40,19 @@ export default function LoginScreen() {
       </View>
 
       <View style={{ gap: theme.spacing.md }}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => enter('incomplete')}
-          style={[
-            styles.button,
-            {
-              backgroundColor: theme.colors.primary,
-              borderRadius: theme.radii.md,
-              padding: theme.spacing.md,
-            },
-          ]}
-        >
-          <AppText variant="body" tone="onPrimary">
-            Log in
-          </AppText>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
+        <AppButton fullWidth onPress={() => enter('incomplete')}>
+          Log in
+        </AppButton>
+        <AppButton
+          fullWidth
+          variant="secondary"
           onPress={() => {
             signUp();
             router.replace('/home');
           }}
-          style={[
-            styles.button,
-            {
-              borderColor: theme.colors.border,
-              borderRadius: theme.radii.md,
-              borderWidth: 1,
-              padding: theme.spacing.md,
-            },
-          ]}
         >
-          <AppText variant="body">Sign up</AppText>
-        </Pressable>
+          Sign up
+        </AppButton>
       </View>
 
       <View style={{ gap: theme.spacing.sm }}>
@@ -108,8 +88,5 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   screen: {
     justifyContent: 'center',
-  },
-  button: {
-    alignItems: 'center',
   },
 });

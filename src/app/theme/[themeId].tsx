@@ -1,6 +1,7 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
+import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import { getTheme } from '@/data/mock';
@@ -164,24 +165,11 @@ export default function ThemeProgressScreen() {
               </>
             ) : null}
             {waitingToday ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={openToday}
-                style={[
-                  styles.button,
-                  {
-                    backgroundColor: theme.colors.primary,
-                    borderRadius: theme.radii.md,
-                    padding: theme.spacing.md,
-                  },
-                ]}
-              >
-                <AppText variant="body" tone="onPrimary">
-                  {inProgress
-                    ? `Continue Day ${currentChallenge.day}`
-                    : 'Open today’s exercise'}
-                </AppText>
-              </Pressable>
+              <AppButton fullWidth onPress={openToday}>
+                {inProgress
+                  ? `Continue Day ${currentChallenge.day}`
+                  : 'Open today’s exercise'}
+              </AppButton>
             ) : null}
           </View>
         ) : (
@@ -249,9 +237,3 @@ export default function ThemeProgressScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-  },
-});

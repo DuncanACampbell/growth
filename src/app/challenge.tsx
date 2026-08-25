@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 
+import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import { GuidedExerciseChat } from '@/components/GuidedExerciseChat';
@@ -316,41 +317,15 @@ export default function ChallengeScreen() {
         )}
 
         {showCompletion ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.replace('/home')}
-            style={[
-              styles.button,
-              {
-                backgroundColor: theme.colors.primary,
-                borderRadius: theme.radii.md,
-                padding: theme.spacing.md,
-              },
-            ]}
-          >
-            <AppText variant="body" tone="onPrimary">
-              Back to home
-            </AppText>
-          </Pressable>
+          <AppButton fullWidth onPress={() => router.replace('/home')}>
+            Back to home
+          </AppButton>
         ) : (
-          <Pressable
-            accessibilityRole="button"
-            onPress={sendMockReply}
-            style={[
-              styles.button,
-              {
-                backgroundColor: theme.colors.primary,
-                borderRadius: theme.radii.md,
-                padding: theme.spacing.md,
-              },
-            ]}
-          >
-            <AppText variant="body" tone="onPrimary">
-              {guidedTurns[turnIndex]
-                ? `Reply: ${guidedTurns[turnIndex]?.userReply}`
-                : 'Continue'}
-            </AppText>
-          </Pressable>
+          <AppButton fullWidth onPress={sendMockReply}>
+            {guidedTurns[turnIndex]
+              ? `Reply: ${guidedTurns[turnIndex]?.userReply}`
+              : 'Continue'}
+          </AppButton>
         )}
       </ScrollView>
     </Screen>
@@ -358,9 +333,6 @@ export default function ChallengeScreen() {
 }
 
 const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-  },
   fill: {
     flex: 1,
   },

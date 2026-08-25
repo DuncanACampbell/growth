@@ -72,6 +72,11 @@ export const colors = {
     primary: '#1F6B4A',
     onPrimary: '#FFFFFF',
     danger: '#B42318',
+    buttonPrimary: '#1C1916',
+    buttonOnPrimary: '#FFF9F3',
+    buttonSecondary: '#FFFFFF',
+    buttonOnSecondary: '#1A1A18',
+    buttonSecondaryBorder: '#E4E4DF',
   },
   dark: {
     background: '#161310',
@@ -82,6 +87,11 @@ export const colors = {
     primary: '#5FBF91',
     onPrimary: '#0C1F16',
     danger: '#F97066',
+    buttonPrimary: '#F5F5F0',
+    buttonOnPrimary: '#161310',
+    buttonSecondary: '#2A2622',
+    buttonOnSecondary: '#F5F5F0',
+    buttonSecondaryBorder: '#3A3530',
   },
 } as const;
 

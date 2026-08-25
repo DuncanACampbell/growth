@@ -1,5 +1,6 @@
 import { Pressable, View } from 'react-native';
 
+import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import type { CatalogThemeVisual } from '@/data/theme-visuals';
 import { useTheme } from '@/theme';
@@ -95,24 +96,14 @@ export function TodayExerciseCard({
         ) : null}
       </Pressable>
 
-      <Pressable
-        accessibilityRole="button"
+      <AppButton
+        fullWidth
         onPress={onStart}
-        style={{
-          alignItems: 'center',
-          alignSelf: 'stretch',
-          backgroundColor: visual.accent,
-          borderRadius: theme.radii.full,
-          justifyContent: 'center',
-          minHeight: 48,
-          marginTop: theme.spacing.sm,
-          paddingHorizontal: theme.spacing.lg,
-        }}
+        accessibilityLabel={actionLabel}
+        style={{ marginTop: theme.spacing.sm }}
       >
-        <AppText variant="body" style={{ color: visual.onAccent, fontWeight: '600' }}>
-          {actionLabel}
-        </AppText>
-      </Pressable>
+        {actionLabel}
+      </AppButton>
     </View>
   );
 }
