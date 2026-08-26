@@ -1,27 +1,38 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, View } from 'react-native';
 
+import {
+  ReflectionItem,
+  reflectionVariantForIndex,
+} from '@/components/theme/ReflectionItem';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import { getTheme } from '@/data/mock';
+import { getCatalogThemeVisual } from '@/data/theme-visuals';
 import {
-  didCompleteThemeToday,
-  getCompletedTodayChallenge,
   getHomeState,
   getInProgressSession,
   getProgrammeProgress,
   getThemeExerciseHistory,
   getThemeProgress,
   getTodaysChallenge,
-  getTodaysStatement,
   isProgrammeComplete,
   isThemeAvailableToday,
 } from '@/data/progression';
 import { useMockSession } from '@/lib/mock-session';
-import { useTheme } from '@/theme';
+import { ThemeProvider, useTheme } from '@/theme';
 
 export default function ThemeProgressScreen() {
+  return (
+    <ThemeProvider scheme="light">
+      <ThemeProgressContent />
+    </ThemeProvider>
+  );
+}
+
+function ThemeProgressContent() {
   const theme = useTheme();
   const { isSignedIn, world } = useMockSession();
   const { themeId: themeIdParam } = useLocalSearchParams<{ themeId?: string }>();
@@ -42,21 +53,16 @@ export default function ThemeProgressScreen() {
   }
 
   const programme = getProgrammeProgress(world, themeId);
-  const history = getThemeExerciseHistory(world, themeId);
+  const historyNewestFirst = [...getThemeExerciseHistory(world, themeId)].sort(
+    (a, b) => b.day - a.day,
+  );
   const waitingToday = isThemeAvailableToday(world, themeId);
-  const completedToday = didCompleteThemeToday(world, themeId);
   const programmeComplete = isProgrammeComplete(world, themeId);
-  const todaysChallenge = getTodaysChallenge(world, themeId);
-  const completedTodayChallenge = getCompletedTodayChallenge(world, themeId);
-  const currentChallenge = waitingToday
-    ? todaysChallenge
-    : completedToday
-      ? completedTodayChallenge
-      : null;
-  const todaysStatement = getTodaysStatement(world, currentChallenge?.id ?? null);
-  const inProgress = currentChallenge
-    ? getInProgressSession(world, themeId, currentChallenge.id)
+  const todaysChallenge = waitingToday ? getTodaysChallenge(world, themeId) : null;
+  const inProgress = todaysChallenge
+    ? getInProgressSession(world, themeId, todaysChallenge.id)
     : null;
+  const visual = getCatalogThemeVisual(themeId, 'light');
   const fill =
     programme.totalDays > 0
       ? Math.min(1, programme.completedCount / programme.totalDays)
@@ -71,168 +77,130 @@ export default function ThemeProgressScreen() {
   }
 
   function openToday() {
-    if (!themeId || !currentChallenge) {
+    if (!themeId || !todaysChallenge) {
       return;
     }
     router.push({
       pathname: '/challenge',
       params: {
         themeId,
-        exerciseId: currentChallenge.id,
+        exerciseId: todaysChallenge.id,
       },
     });
   }
-
-  const currentStatusLabel = programmeComplete
-    ? 'Programme completed'
-    : waitingToday
-      ? inProgress
-        ? 'In progress'
-        : 'Available today'
-      : completedToday
-        ? 'Completed today'
-        : `Come back tomorrow for Day ${programme.currentDay}`;
 
   return (
     <Screen>
       <ScrollView
         contentContainerStyle={{
+          paddingBottom: theme.spacing.xxxl,
           paddingHorizontal: theme.spacing.xl,
-          paddingVertical: theme.spacing.lg,
-          gap: theme.spacing.xl,
+          paddingTop: theme.spacing.md,
+          gap: theme.spacing.xxl,
         }}
       >
-        <Pressable accessibilityRole="button" onPress={goBack}>
-          <AppText variant="body" tone="primary">
-            Back
-          </AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          hitSlop={8}
+          onPress={goBack}
+          style={{
+            alignItems: 'center',
+            alignSelf: 'flex-start',
+            height: 44,
+            justifyContent: 'center',
+            width: 44,
+          }}
+        >
+          <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
         </Pressable>
 
-        <View style={{ gap: theme.spacing.sm }}>
-          <AppText variant="title">{catalogTheme.name}</AppText>
-          <AppText variant="body" tone="muted">
-            {catalogTheme.subtitle}
-          </AppText>
-          <AppText variant="caption" tone="muted">
-            {programme.completedCount} of {programme.totalDays} completed
-            {programmeComplete
-              ? ''
-              : ` · Day ${programme.currentDay} of ${programme.totalDays}`}
-          </AppText>
-          <View
-            style={{
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radii.md,
-              borderWidth: 1,
-              height: 10,
-              overflow: 'hidden',
-            }}
-          >
+        <View style={{ gap: theme.spacing.lg }}>
+          <View style={{ gap: theme.spacing.sm }}>
+            <AppText
+              variant="title"
+              style={{ color: visual.accent, fontWeight: '700' }}
+            >
+              {catalogTheme.name}
+            </AppText>
+            <AppText variant="body" tone="muted">
+              {catalogTheme.subtitle}
+            </AppText>
+          </View>
+
+          <View style={{ gap: theme.spacing.sm }}>
+            <AppText
+              variant="caption"
+              style={{ color: visual.onTint, fontWeight: '600' }}
+            >
+              {programme.completedCount} of {programme.totalDays} days
+            </AppText>
             <View
               style={{
-                backgroundColor: theme.colors.primary,
-                height: '100%',
-                width: `${Math.round(fill * 100)}%`,
+                backgroundColor: visual.tint,
+                borderRadius: theme.radii.full,
+                height: 8,
+                overflow: 'hidden',
               }}
-            />
-          </View>
-        </View>
-
-        {currentChallenge ? (
-          <View
-            style={{
-              borderColor: theme.colors.border,
-              borderRadius: theme.radii.md,
-              borderWidth: 1,
-              gap: theme.spacing.sm,
-              padding: theme.spacing.lg,
-            }}
-          >
-            <AppText variant="caption" tone="muted">
-              Today
-            </AppText>
-            <AppText variant="subtitle">{currentChallenge.title}</AppText>
-            <AppText variant="caption" tone="muted">
-              Day {currentChallenge.day} of {currentChallenge.totalDays} · {currentStatusLabel}
-            </AppText>
-            {completedToday && todaysStatement?.text ? (
-              <>
-                <AppText variant="caption" tone="muted">
-                  Thought of the day
-                </AppText>
-                <AppText variant="body">“{todaysStatement.text}”</AppText>
-              </>
-            ) : null}
-            {waitingToday ? (
-              <AppButton fullWidth onPress={openToday}>
-                {inProgress
-                  ? `Continue Day ${currentChallenge.day}`
-                  : 'Open today’s exercise'}
-              </AppButton>
-            ) : null}
-          </View>
-        ) : (
-          <View
-            style={{
-              borderColor: theme.colors.border,
-              borderRadius: theme.radii.md,
-              borderWidth: 1,
-              gap: theme.spacing.sm,
-              padding: theme.spacing.lg,
-            }}
-          >
-            <AppText variant="caption" tone="muted">
-              Today
-            </AppText>
-            <AppText variant="body">{currentStatusLabel}</AppText>
-          </View>
-        )}
-
-        <View style={{ gap: theme.spacing.md }}>
-          <AppText variant="subtitle">Your progress</AppText>
-          {history.length === 0 ? (
-            <AppText variant="body" tone="muted">
-              No completed exercises in this theme yet.
-            </AppText>
-          ) : (
-            history.map((item) => (
+            >
               <View
-                key={item.exerciseId}
                 style={{
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radii.md,
-                  borderWidth: 1,
-                  gap: theme.spacing.xs,
-                  padding: theme.spacing.lg,
+                  backgroundColor: visual.accent,
+                  borderRadius: theme.radii.full,
+                  height: '100%',
+                  width: `${Math.round(fill * 100)}%`,
                 }}
-              >
-                <AppText variant="caption" tone="muted">
-                  Day {item.day} · {item.completedAt}
-                </AppText>
-                <AppText variant="body">{item.title}</AppText>
-                {item.statement ? (
-                  <>
-                    <AppText variant="caption" tone="muted">
-                      Thought of the day
-                    </AppText>
-                    <AppText variant="body">“{item.statement}”</AppText>
-                  </>
-                ) : null}
-                {item.memory?.topic ? (
-                  <AppText variant="caption" tone="muted">
-                    {item.memory.topic}
-                  </AppText>
-                ) : null}
-                {item.memory?.reframe ? (
-                  <AppText variant="caption" tone="muted">
-                    {item.memory.reframe}
-                  </AppText>
-                ) : null}
-              </View>
-            ))
-          )}
+              />
+            </View>
+          </View>
         </View>
+
+        {waitingToday && todaysChallenge && !programmeComplete ? (
+          <View
+            style={{
+              backgroundColor: visual.tint,
+              borderRadius: theme.radii.xxl,
+              gap: theme.spacing.md,
+              padding: theme.spacing.xl,
+            }}
+          >
+            <AppText
+              variant="caption"
+              style={{ color: visual.accent, fontWeight: '600' }}
+            >
+              Today · Day {todaysChallenge.day} of {todaysChallenge.totalDays}
+            </AppText>
+            <AppText
+              variant="subtitle"
+              style={{ color: visual.onTint, fontSize: 22, lineHeight: 28 }}
+            >
+              {todaysChallenge.title}
+            </AppText>
+            <AppButton fullWidth onPress={openToday}>
+              {inProgress
+                ? `Continue Day ${todaysChallenge.day}`
+                : 'Start'}
+            </AppButton>
+          </View>
+        ) : null}
+
+        {historyNewestFirst.length > 0 ? (
+          <View style={{ gap: theme.spacing.lg }}>
+            <AppText variant="subtitle">Your reflections</AppText>
+            <View style={{ gap: theme.spacing.md }}>
+              {historyNewestFirst.map((item, index) => (
+                <ReflectionItem
+                  key={item.exerciseId}
+                  statement={item.statement}
+                  day={item.day}
+                  completedAt={item.completedAt}
+                  visual={visual}
+                  variant={reflectionVariantForIndex(index)}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </Screen>
   );

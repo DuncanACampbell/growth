@@ -33,3 +33,17 @@ export function isSameIsoDate(left: IsoDate, right: IsoDate): boolean {
 export function isIsoDateOnOrBefore(left: IsoDate, right: IsoDate): boolean {
   return compareIsoDates(left, right) <= 0;
 }
+
+/** Compact display date, e.g. "28 Aug". Includes year only when it differs from `relativeTo`. */
+export function formatCompactDate(
+  iso: IsoDate,
+  relativeTo: Date = new Date(),
+): string {
+  const date = dateFromIso(iso);
+  const day = date.getDate();
+  const month = date.toLocaleString('en-GB', { month: 'short' });
+  if (date.getFullYear() !== relativeTo.getFullYear()) {
+    return `${day} ${month} ${date.getFullYear()}`;
+  }
+  return `${day} ${month}`;
+}

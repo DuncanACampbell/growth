@@ -2,6 +2,7 @@ import { Pressable } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import type { CatalogThemeVisual } from '@/data/theme-visuals';
+import { displayStatement } from '@/lib/display-statement';
 import { useTheme } from '@/theme';
 
 type CompletedExerciseCardProps = {
@@ -10,27 +11,6 @@ type CompletedExerciseCardProps = {
   visual: CatalogThemeVisual;
   onOpenTheme: () => void;
 };
-
-/** Strip wrapping quotes for display only; does not alter stored statement text. */
-function displayStatement(statement: string): string {
-  const trimmed = statement.trim();
-  const pairs: [string, string][] = [
-    ['"', '"'],
-    ['\u201C', '\u201D'],
-    ['\u2018', '\u2019'],
-    ["'", "'"],
-  ];
-  for (const [open, close] of pairs) {
-    if (
-      trimmed.length >= 2 &&
-      trimmed.startsWith(open) &&
-      trimmed.endsWith(close)
-    ) {
-      return trimmed.slice(open.length, -close.length).trim();
-    }
-  }
-  return trimmed;
-}
 
 export function CompletedExerciseCard({
   themeName,
