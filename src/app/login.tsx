@@ -1,10 +1,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -28,6 +30,15 @@ function toAuthErrorMessage(error: unknown): string {
   return 'Something went wrong. Please try again.';
 }
 
+function randomDevEmailLocalPart(): string {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+  let local = '';
+  for (let i = 0; i < 12; i += 1) {
+    local += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return local;
+}
+
 export default function LoginScreen() {
   const theme = useTheme();
   const {
@@ -47,6 +58,12 @@ export default function LoginScreen() {
 
   if (isSignedIn && world) {
     return <Redirect href={getPostAuthHref(world)} />;
+  }
+
+  function fillDevCredentials() {
+    setEmail(`${randomDevEmailLocalPart()}@rally.lgbt`);
+    setPassword('12345678');
+    setError(null);
   }
 
   async function handleSignUp() {
@@ -211,20 +228,45 @@ export default function LoginScreen() {
                 </AppText>
               ) : null}
 
-              <AppButton
-                fullWidth
-                disabled={submitting}
-                onPress={() => {
-                  void handleSignUp();
-                }}
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.42)',
-                  borderColor: 'rgba(255,255,255,0.58)',
-                  borderWidth: 1,
-                }}
-              >
-                Sign up
-              </AppButton>
+              <View style={{ position: 'relative', width: '100%' }}>
+                <AppButton
+                  fullWidth
+                  disabled={submitting}
+                  onPress={() => {
+                    void handleSignUp();
+                  }}
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.42)',
+                    borderColor: 'rgba(255,255,255,0.58)',
+                    borderWidth: 1,
+                  }}
+                >
+                  Sign up
+                </AppButton>
+                <Pressable
+                  accessibilityLabel="Fill test signup credentials"
+                  accessibilityRole="button"
+                  disabled={submitting}
+                  hitSlop={8}
+                  onPress={fillDevCredentials}
+                  style={{
+                    alignItems: 'center',
+                    bottom: 0,
+                    justifyContent: 'center',
+                    opacity: submitting ? 0.5 : 1,
+                    paddingHorizontal: theme.spacing.lg,
+                    position: 'absolute',
+                    right: 0,
+                    top: 0,
+                  }}
+                >
+                  <Ionicons
+                    name="hammer-outline"
+                    size={18}
+                    color="rgba(255,255,255,0.45)"
+                  />
+                </Pressable>
+              </View>
               <AppButton
                 fullWidth
                 disabled={submitting}

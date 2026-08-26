@@ -14,6 +14,7 @@ import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
 import {
+  canEditOnboardingName,
   isOnboardingComplete,
   nextOnboardingStepAfterName,
   routeForOnboardingStep,
@@ -33,7 +34,7 @@ export default function OnboardingNameScreen() {
 function OnboardingNameContent() {
   const theme = useTheme();
   const { isSignedIn, world, completeOnboardingName } = useMockSession();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(world?.user.displayName ?? '');
 
   if (!isSignedIn || !world) {
     return <Redirect href="/login" />;
@@ -43,10 +44,11 @@ function OnboardingNameContent() {
     return <Redirect href="/home" />;
   }
 
-  if (world.user.onboardingStep !== 'name') {
+  if (!canEditOnboardingName(world.user)) {
     return <Redirect href={routeForOnboardingStep(world.user.onboardingStep)} />;
   }
 
+  const onboardingStep = world.user.onboardingStep;
   const trimmed = name.trim();
   const canContinue = trimmed.length > 0;
 
@@ -54,10 +56,17 @@ function OnboardingNameContent() {
     if (!canContinue) {
       return;
     }
+    const returningToThemes = onboardingStep === 'themes';
     completeOnboardingName(trimmed);
-    // Temporary: advances straight to Home. When theme-interest ships, change
-    // nextOnboardingStepAfterName() and this will follow that route.
-    router.replace(routeForOnboardingStep(nextOnboardingStepAfterName()));
+    if (returningToThemes) {
+      if (router.canGoBack()) {
+        router.back();
+        return;
+      }
+      router.replace('/onboarding/themes');
+      return;
+    }
+    router.push(routeForOnboardingStep(nextOnboardingStepAfterName()));
   }
 
   const inputStyle: TextStyle = {
@@ -112,7 +121,7 @@ function OnboardingNameContent() {
               onChangeText={setName}
               autoCapitalize="words"
               autoCorrect={false}
-              autoFocus
+              autoFocus={onboardingStep === 'name'}
               placeholder="Your first name"
               placeholderTextColor={theme.colors.textMuted}
               returnKeyType="done"

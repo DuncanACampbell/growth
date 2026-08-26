@@ -3,9 +3,9 @@ export type IsoDate = string;
 
 /**
  * Where the user is in first-run setup.
- * Insert future steps (e.g. `'themes'`) between `'name'` and `'complete'`.
+ * `'themes'` sits between name capture and Home.
  */
-export type OnboardingStep = 'name' | 'complete';
+export type OnboardingStep = 'name' | 'themes' | 'complete';
 
 /**
  * The signed-in person. Theme progress and streak live beside the user,
@@ -16,6 +16,8 @@ export type User = {
   displayName: string;
   selectedThemeId: string | null;
   onboardingStep: OnboardingStep;
+  /** Catalogue theme IDs the user marked as interests during onboarding. */
+  interestedThemeIds: string[];
 };
 
 export type ThemeCurrency = 'EUR';

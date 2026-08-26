@@ -1,14 +1,11 @@
 import type { Href } from 'expo-router';
 
-import type { MockWorld } from '@/data/mock';
+import { getCatalogueThemes, type MockWorld } from '@/data/mock';
 import type { OnboardingStep, User } from '@/types/models';
 
-/**
- * Temporary: after name, skip ahead to complete until theme-interest exists.
- * Change this to return `'themes'` when that screen ships.
- */
+/** After name, continue to theme-interest selection. */
 export function nextOnboardingStepAfterName(): OnboardingStep {
-  return 'complete';
+  return 'themes';
 }
 
 export function isOnboardingComplete(user: User): boolean {
@@ -19,11 +16,18 @@ export function needsOnboarding(user: User): boolean {
   return !isOnboardingComplete(user);
 }
 
-/** Route for the user's current onboarding step (never `/home`). */
+/** True while the user may still edit their name (name step or themes step). */
+export function canEditOnboardingName(user: User): boolean {
+  return user.onboardingStep === 'name' || user.onboardingStep === 'themes';
+}
+
+/** Route for the user's current onboarding step. */
 export function routeForOnboardingStep(step: OnboardingStep): Href {
   switch (step) {
     case 'name':
       return '/onboarding/name';
+    case 'themes':
+      return '/onboarding/themes';
     case 'complete':
       return '/home';
   }
@@ -35,4 +39,13 @@ export function getPostAuthHref(world: MockWorld): Href {
     return routeForOnboardingStep(world.user.onboardingStep);
   }
   return '/home';
+}
+
+/** Keep only known catalogue theme IDs (deduped, stable order from catalogue). */
+export function sanitizeInterestedThemeIds(themeIds: string[]): string[] {
+  const allowed = new Set(getCatalogueThemes().map((theme) => theme.id));
+  const selected = new Set(themeIds.filter((id) => allowed.has(id)));
+  return getCatalogueThemes()
+    .map((theme) => theme.id)
+    .filter((id) => selected.has(id));
 }

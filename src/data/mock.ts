@@ -125,6 +125,11 @@ export function getComingSoonThemes(): Theme[] {
   return MOCK_THEMES.filter((item) => item.status === 'comingSoon');
 }
 
+/** Full catalogue for interest/preference UIs (includes Coming Soon). */
+export function getCatalogueThemes(): Theme[] {
+  return MOCK_THEMES;
+}
+
 export function formatEuroPrice(amount: number): string {
   return `€${amount}`;
 }
@@ -359,6 +364,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
         displayName: '',
         selectedThemeId: null,
         onboardingStep: 'name',
+        interestedThemeIds: [],
       },
       { currentStreak: 0 },
     );
@@ -374,6 +380,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
         displayName: 'Jordan',
         selectedThemeId: themeId,
         onboardingStep: 'complete',
+        interestedThemeIds: [],
       },
       { currentStreak: 4 },
       [
@@ -400,6 +407,7 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
       displayName: 'Sam',
       selectedThemeId: themeId,
       onboardingStep: 'complete',
+      interestedThemeIds: [],
     },
     { currentStreak: 12, lastActivityDate: today },
     [

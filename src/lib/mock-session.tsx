@@ -31,7 +31,10 @@ import {
   type CompleteSessionOptions,
 } from '@/data/progression';
 import { getLocalIsoDate } from '@/lib/calendar';
-import { nextOnboardingStepAfterName } from '@/lib/onboarding';
+import {
+  nextOnboardingStepAfterName,
+  sanitizeInterestedThemeIds,
+} from '@/lib/onboarding';
 import type { ChallengeMessage } from '@/types/models';
 
 const STORAGE_KEY = 'growth.mock-world.v2';
@@ -44,6 +47,9 @@ function normalizeWorld(world: MockWorld): MockWorld {
       // Existing local worlds predate onboarding — treat them as finished.
       onboardingStep: world.user.onboardingStep ?? 'complete',
       displayName: world.user.displayName ?? '',
+      interestedThemeIds: Array.isArray(world.user.interestedThemeIds)
+        ? world.user.interestedThemeIds
+        : [],
     },
     userProgress: {
       currentStreak: world.userProgress.currentStreak,
@@ -83,8 +89,13 @@ type MockSessionValue = {
   signIn: (personaId?: PersonaId) => void;
   signUp: () => void;
   signOut: () => void;
-  /** Saves preferred name and advances onboarding (temporarily to complete). */
+  /** Saves preferred name and advances onboarding to theme interests. */
   completeOnboardingName: (displayName: string) => void;
+  /**
+   * Saves interest theme IDs and completes onboarding.
+   * Does not unlock, purchase, or start any programme.
+   */
+  completeOnboardingThemes: (interestedThemeIds: string[]) => void;
   previewPersona: (personaId: PersonaId) => void;
   selectTheme: (themeId: string) => void;
   purchaseTheme: (themeId: string) => void;
@@ -178,6 +189,26 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const completeOnboardingThemes = useCallback((themeIds: string[]) => {
+    const interestedThemeIds = sanitizeInterestedThemeIds(themeIds);
+    if (interestedThemeIds.length === 0) {
+      return;
+    }
+    setWorld((current) => {
+      if (!current) {
+        return current;
+      }
+      return {
+        ...current,
+        user: {
+          ...current.user,
+          interestedThemeIds,
+          onboardingStep: 'complete',
+        },
+      };
+    });
+  }, []);
+
   const previewPersona = useCallback((personaId: PersonaId) => {
     setWorld(createMockWorld(personaId, getLocalIsoDate()));
   }, []);
@@ -265,6 +296,7 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
       completeOnboardingName,
+      completeOnboardingThemes,
       previewPersona,
       selectTheme,
       purchaseTheme,
@@ -285,6 +317,7 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
       completeOnboardingName,
+      completeOnboardingThemes,
       previewPersona,
       selectTheme,
       purchaseTheme,
