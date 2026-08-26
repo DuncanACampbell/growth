@@ -16,6 +16,10 @@ import {
 } from 'firebase/auth';
 
 import { getFirebaseAuth } from '@/lib/firebase/client';
+import {
+  createUserProfileOnSignUp,
+  touchUserProfileOnSignIn,
+} from '@/lib/firebase/user-profile';
 
 type AuthSessionValue = {
   user: User | null;
@@ -43,12 +47,24 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(async (email: string, password: string) => {
     const auth = getFirebaseAuth();
-    await createUserWithEmailAndPassword(auth, email, password);
+    const credential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
+    await createUserProfileOnSignUp({
+      uid: credential.user.uid,
+      email: credential.user.email ?? email,
+    });
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const auth = getFirebaseAuth();
-    await signInWithEmailAndPassword(auth, email, password);
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    await touchUserProfileOnSignIn({
+      uid: credential.user.uid,
+      email: credential.user.email ?? email,
+    });
   }, []);
 
   const signOut = useCallback(async () => {

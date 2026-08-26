@@ -27,6 +27,7 @@ import {
   getTodaysStatement,
   getWaitingThemeProgress,
 } from '@/data/progression';
+import { useAuthSession } from '@/lib/auth-session';
 import { useMockSession } from '@/lib/mock-session';
 import { ThemeProvider, useTheme } from '@/theme';
 import type { Challenge, Theme as CatalogTheme } from '@/types/models';
@@ -71,10 +72,22 @@ export default function HomeScreen() {
 
 function HomeScreenContent() {
   const theme = useTheme();
-  const { isSignedIn, world, signOut } = useMockSession();
+  const { signOut: authSignOut } = useAuthSession();
+  const { isSignedIn, world, signOut: mockSignOut } = useMockSession();
 
   if (!isSignedIn || !world) {
     return <Redirect href="/login" />;
+  }
+
+  async function handleLogOut() {
+    try {
+      await authSignOut();
+    } catch {
+      // Still clear local session so the user is not stuck signed in.
+    } finally {
+      mockSignOut();
+      router.replace('/login');
+    }
   }
 
   const sessionWorld = world;
@@ -379,8 +392,7 @@ function HomeScreenContent() {
               variant="secondary"
               accessibilityLabel="Log out"
               onPress={() => {
-                signOut();
-                router.replace('/login');
+                void handleLogOut();
               }}
               leadingIcon={
                 <Ionicons

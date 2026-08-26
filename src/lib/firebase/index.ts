@@ -18,3 +18,7 @@ export type {
   SendGuidedExerciseMessageInput,
   SendGuidedExerciseMessageResult,
 } from './guided-exercise';
+export {
+  createUserProfileOnSignUp,
+  touchUserProfileOnSignIn,
+} from './user-profile';
