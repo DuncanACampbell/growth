@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
@@ -9,13 +10,19 @@ import {
   View,
 } from 'react-native';
 
+import { GuidedExerciseChat } from '@/components/GuidedExerciseChat';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import { Screen } from '@/components/ui/Screen';
-import { GuidedExerciseChat } from '@/components/GuidedExerciseChat';
-import { getExampleStatement, getGuidedTurns, getProgrammeForTheme } from '@/data/mock';
 import {
-  developerCompleteOptions,
+  getCatalogTheme,
+  getExampleStatement,
+  getGuidedTurns,
+  getProgrammeForTheme,
+  getTheme,
+} from '@/data/mock';
+import { getCatalogThemeVisual } from '@/data/theme-visuals';
+import {
   getChallengeForExercise,
   getHomeState,
   getInProgressSession,
@@ -27,17 +34,28 @@ import {
   isExerciseCompleted,
   isExerciseUnlocked,
 } from '@/data/progression';
+import { displayStatement } from '@/lib/display-statement';
 import { useMockSession } from '@/lib/mock-session';
-import { useTheme } from '@/theme';
+import { ThemeProvider, useTheme } from '@/theme';
 import type { ChallengeMessage } from '@/types/models';
 
 export default function ChallengeScreen() {
+  return (
+    <ThemeProvider scheme="light">
+      <ChallengeScreenContent />
+    </ThemeProvider>
+  );
+}
+
+function ChallengeScreenContent() {
   const theme = useTheme();
-  const { isSignedIn, world, completeToday, saveInProgressSession } = useMockSession();
-  const { themeId: themeIdParam, exerciseId: exerciseIdParam } = useLocalSearchParams<{
-    themeId?: string;
-    exerciseId?: string;
-  }>();
+  const { isSignedIn, world, completeToday, saveInProgressSession } =
+    useMockSession();
+  const { themeId: themeIdParam, exerciseId: exerciseIdParam } =
+    useLocalSearchParams<{
+      themeId?: string;
+      exerciseId?: string;
+    }>();
   const [turnIndex, setTurnIndex] = useState(0);
   const [awaitingReply, setAwaitingReply] = useState(true);
   const [keepLiveChat, setKeepLiveChat] = useState(false);
@@ -90,6 +108,10 @@ export default function ChallengeScreen() {
     getTodaysStatement(world, todaysChallenge.id);
   const guidedTurns = getGuidedTurns(todaysChallenge.id);
   const useLiveGuidedChat = Boolean(getProgrammeForTheme(themeId));
+  const catalogTheme =
+    getTheme(world, themeId) ?? getCatalogTheme(themeId);
+  const visual = getCatalogThemeVisual(themeId, 'light');
+  const themeName = catalogTheme?.name ?? themeId;
 
   const liveMessages: ChallengeMessage[] = [];
   for (let index = 0; index < turnIndex; index += 1) {
@@ -124,6 +146,14 @@ export default function ChallengeScreen() {
     }
   }
 
+  function goBack() {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/home');
+  }
+
   function sendMockReply() {
     const current = guidedTurns[turnIndex];
     if (!current) {
@@ -142,47 +172,60 @@ export default function ChallengeScreen() {
     setAwaitingReply(true);
   }
 
-  function markCompleteForTesting() {
-    if (!themeId || !todaysChallenge) {
-      return;
-    }
-    const placeholderClose: ChallengeMessage = {
-      id: `dev-complete-${Date.now()}`,
-      role: 'guide',
-      text: 'That’s it for today. Come back tomorrow.',
-    };
-    const messages = [...(inProgress?.messages ?? []), placeholderClose];
-    completeToday(
-      themeId,
-      developerCompleteOptions(themeId, todaysChallenge.id, messages),
-    );
-  }
+  const header = (
+    <View
+      style={{
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: theme.spacing.sm,
+        paddingBottom: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.xl,
+        paddingTop: theme.spacing.md,
+      }}
+    >
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        hitSlop={8}
+        onPress={goBack}
+        style={{
+          alignItems: 'center',
+          height: 44,
+          justifyContent: 'center',
+          width: 44,
+        }}
+      >
+        <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+      </Pressable>
+      <AppText variant="body" numberOfLines={1} style={{ flex: 1 }}>
+        <AppText
+          variant="body"
+          style={{ color: visual.accent, fontWeight: '600' }}
+        >
+          {themeName}
+        </AppText>
+        <AppText variant="body" tone="muted">
+          {` · Day ${todaysChallenge.day} of ${todaysChallenge.totalDays}`}
+        </AppText>
+      </AppText>
+    </View>
+  );
 
   if (useLiveGuidedChat && (canStart || keepLiveChat)) {
     return (
       <Screen>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
           style={styles.fill}
         >
-          <View
-            style={{
-              gap: theme.spacing.lg,
-              paddingHorizontal: theme.spacing.xl,
-              paddingTop: theme.spacing.lg,
-            }}
-          >
-            <AppText variant="title">{todaysChallenge.title}</AppText>
-            <AppText variant="body" tone="muted">
-              {todaysChallenge.prompt}
-            </AppText>
-          </View>
+          {header}
           <View
             style={[
               styles.fill,
               {
+                paddingBottom: theme.spacing.lg,
                 paddingHorizontal: theme.spacing.xl,
-                paddingVertical: theme.spacing.lg,
               },
             ]}
           >
@@ -190,6 +233,7 @@ export default function ChallengeScreen() {
               sessionId={inProgress?.id ?? todaysChallenge.id}
               themeId={themeId}
               exerciseId={todaysChallenge.id}
+              visual={visual}
               previousMemory={getPriorProgrammeMemories(
                 world,
                 themeId,
@@ -227,105 +271,118 @@ export default function ChallengeScreen() {
                 });
               }}
             />
-            <Pressable
-              accessibilityRole="button"
-              onPress={markCompleteForTesting}
-              style={{ alignItems: 'center', paddingVertical: theme.spacing.sm }}
-            >
-              <AppText variant="caption" tone="muted">
-                Developer
-              </AppText>
-              <AppText variant="body" tone="primary">
-                Mark conversation complete
-              </AppText>
-            </Pressable>
           </View>
         </KeyboardAvoidingView>
       </Screen>
     );
   }
 
+  const completedTakeaway = displayStatement(
+    todaysStatement?.text ??
+      getExampleStatement(todaysChallenge.id) ??
+      todaysChallenge.title,
+  );
+
   return (
     <Screen>
+      {header}
       <ScrollView
         contentContainerStyle={{
+          gap: theme.spacing.xl,
+          paddingBottom: theme.spacing.xxxl,
           paddingHorizontal: theme.spacing.xl,
-          paddingVertical: theme.spacing.lg,
-          gap: theme.spacing.lg,
         }}
       >
-        <AppText variant="title">
-          {showCompletion ? 'Today’s notice' : todaysChallenge.title}
-        </AppText>
-        <AppText variant="body" tone="muted">
-          {todaysChallenge.prompt}
-        </AppText>
-
         {showCompletion ? (
           <View
             style={{
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radii.md,
-              borderWidth: 1,
-              gap: theme.spacing.sm,
-              padding: theme.spacing.lg,
+              backgroundColor: visual.tint,
+              borderRadius: theme.radii.xxl,
+              gap: theme.spacing.xl,
+              marginTop: theme.spacing.lg,
+              paddingHorizontal: theme.spacing.xl,
+              paddingVertical: theme.spacing.xxl,
             }}
           >
-            <AppText variant="caption" tone="muted">
-              Today’s notice
+            <AppText
+              variant="subtitle"
+              style={{
+                color: visual.onTint,
+                fontSize: 22,
+                fontWeight: '600',
+                lineHeight: 32,
+                textAlign: 'center',
+              }}
+            >
+              {completedTakeaway}
             </AppText>
-            <AppText variant="subtitle">
-              {todaysStatement?.text ??
-                getExampleStatement(todaysChallenge.id) ??
-                todaysChallenge.title}
-            </AppText>
+            <AppButton fullWidth onPress={() => router.replace('/home')}>
+              Back to Home
+            </AppButton>
           </View>
         ) : (
-          <View style={{ gap: theme.spacing.md }}>
-            {liveMessages.map((message) => (
-              <View
-                key={message.id}
-                style={{
-                  alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start',
-                  backgroundColor:
-                    message.role === 'user'
-                      ? theme.colors.primary
-                      : theme.colors.surface,
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radii.md,
-                  borderWidth: 1,
-                  maxWidth: '85%',
-                  padding: theme.spacing.md,
-                }}
-              >
-                <AppText
-                  variant="caption"
-                  tone={message.role === 'user' ? 'onPrimary' : 'muted'}
-                >
-                  {message.role === 'guide' ? 'Guide' : 'You'}
-                </AppText>
-                <AppText
-                  variant="body"
-                  tone={message.role === 'user' ? 'onPrimary' : 'default'}
-                >
-                  {message.text}
-                </AppText>
-              </View>
-            ))}
-          </View>
-        )}
+          <>
+            <View style={{ gap: theme.spacing.xl, paddingTop: theme.spacing.xxxl + theme.spacing.md }}>
+              {liveMessages.map((message, index) => {
+                const previous = index > 0 ? liveMessages[index - 1] : null;
+                const marginTop =
+                  index === 0
+                    ? 0
+                    : previous?.role === 'user' && message.role === 'guide'
+                      ? theme.spacing.xxxl + theme.spacing.md
+                      : theme.spacing.xl;
 
-        {showCompletion ? (
-          <AppButton fullWidth onPress={() => router.replace('/home')}>
-            Back to home
-          </AppButton>
-        ) : (
-          <AppButton fullWidth onPress={sendMockReply}>
-            {guidedTurns[turnIndex]
-              ? `Reply: ${guidedTurns[turnIndex]?.userReply}`
-              : 'Continue'}
-          </AppButton>
+                return message.role === 'user' ? (
+                  <View
+                    key={message.id}
+                    style={{
+                      alignSelf: 'flex-end',
+                      backgroundColor: visual.tint,
+                      borderRadius: theme.radii.xxl,
+                      marginTop,
+                      maxWidth: '82%',
+                      paddingHorizontal: theme.spacing.lg,
+                      paddingVertical: theme.spacing.md,
+                    }}
+                  >
+                    <AppText
+                      variant="body"
+                      style={{ color: visual.onTint, lineHeight: 24 }}
+                    >
+                      {message.text}
+                    </AppText>
+                  </View>
+                ) : (
+                  <View
+                    key={message.id}
+                    style={{
+                      alignSelf: 'flex-start',
+                      marginTop,
+                      maxWidth: '78%',
+                      width: '78%',
+                    }}
+                  >
+                    <AppText
+                      variant="body"
+                      style={{
+                        color: theme.colors.text,
+                        fontSize: 17,
+                        letterSpacing: -0.15,
+                        lineHeight: 25,
+                      }}
+                    >
+                      {message.text}
+                    </AppText>
+                  </View>
+                );
+              })}
+            </View>
+            <AppButton fullWidth onPress={sendMockReply}>
+              {guidedTurns[turnIndex]
+                ? `Reply: ${guidedTurns[turnIndex]?.userReply}`
+                : 'Continue'}
+            </AppButton>
+          </>
         )}
       </ScrollView>
     </Screen>
