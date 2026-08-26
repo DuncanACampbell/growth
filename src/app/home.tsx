@@ -1,5 +1,6 @@
 import { Redirect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { CompletedExerciseCard } from '@/components/home/CompletedExerciseCard';
@@ -29,6 +30,7 @@ import {
 } from '@/data/progression';
 import { useAuthSession } from '@/lib/auth-session';
 import { useMockSession } from '@/lib/mock-session';
+import { registerForExpoPushNotifications } from '@/lib/notifications/register-for-push';
 import { ThemeProvider, useTheme } from '@/theme';
 import type { Challenge, Theme as CatalogTheme } from '@/types/models';
 import type { ThemeProgress } from '@/types/progress';
@@ -74,6 +76,7 @@ function HomeScreenContent() {
   const theme = useTheme();
   const { signOut: authSignOut } = useAuthSession();
   const { isSignedIn, world, signOut: mockSignOut } = useMockSession();
+  const [pushSetupMessage, setPushSetupMessage] = useState<string | null>(null);
 
   if (!isSignedIn || !world) {
     return <Redirect href="/login" />;
@@ -87,6 +90,22 @@ function HomeScreenContent() {
     } finally {
       mockSignOut();
       router.replace('/login');
+    }
+  }
+
+  async function handleTestPushSetup() {
+    setPushSetupMessage(null);
+    try {
+      const token = await registerForExpoPushNotifications();
+      console.log('[push] Expo push token:', token);
+      setPushSetupMessage(token);
+    } catch (caught) {
+      const message =
+        caught instanceof Error && caught.message.trim().length > 0
+          ? caught.message
+          : 'Push setup failed.';
+      console.error('[push]', message, caught);
+      setPushSetupMessage(message);
     }
   }
 
@@ -384,10 +403,40 @@ function HomeScreenContent() {
           <View
             style={{
               alignItems: 'center',
+              gap: theme.spacing.md,
               marginTop: 'auto',
               paddingTop: theme.spacing.xl,
+              width: '100%',
             }}
           >
+            {__DEV__ ? (
+              <View
+                style={{
+                  alignItems: 'center',
+                  gap: theme.spacing.sm,
+                  width: '100%',
+                }}
+              >
+                <AppButton
+                  variant="secondary"
+                  accessibilityLabel="Test push setup"
+                  onPress={() => {
+                    void handleTestPushSetup();
+                  }}
+                >
+                  Test push setup
+                </AppButton>
+                {pushSetupMessage ? (
+                  <AppText
+                    variant="caption"
+                    tone="muted"
+                    style={{ textAlign: 'center' }}
+                  >
+                    {pushSetupMessage}
+                  </AppText>
+                ) : null}
+              </View>
+            ) : null}
             <AppButton
               variant="secondary"
               accessibilityLabel="Log out"
