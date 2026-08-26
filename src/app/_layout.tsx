@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AuthSessionProvider } from '@/lib/auth-session';
 import { MockSessionProvider } from '@/lib/mock-session';
 import { ThemeProvider } from '@/theme';
 import { appFontSources } from '@/theme/fonts';
@@ -29,10 +30,12 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <MockSessionProvider>
-          <StatusBar style="auto" />
-          <Stack screenOptions={{ headerShown: false }} />
-        </MockSessionProvider>
+        <AuthSessionProvider>
+          <MockSessionProvider>
+            <StatusBar style="auto" />
+            <Stack screenOptions={{ headerShown: false }} />
+          </MockSessionProvider>
+        </AuthSessionProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

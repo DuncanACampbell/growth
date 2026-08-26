@@ -1,26 +1,99 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+  type TextStyle,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
+import { useAuthSession } from '@/lib/auth-session';
 import { useMockSession } from '@/lib/mock-session';
 import { useTheme } from '@/theme';
+import { appFonts } from '@/theme/fonts';
+
+function toAuthErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return 'Something went wrong. Please try again.';
+}
 
 export default function LoginScreen() {
   const theme = useTheme();
-  const { isSignedIn, signIn, signUp } = useMockSession();
+  const {
+    signIn: authSignIn,
+    signUp: authSignUp,
+  } = useAuthSession();
+  const {
+    isSignedIn,
+    signIn: mockSignIn,
+    signUp: mockSignUp,
+  } = useMockSession();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   if (isSignedIn) {
     return <Redirect href="/home" />;
   }
 
-  function enter() {
-    signIn('incomplete');
-    router.replace('/home');
+  async function handleSignUp() {
+    if (submitting) {
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await authSignUp(email.trim(), password);
+      mockSignUp();
+      router.replace('/home');
+    } catch (caught) {
+      setError(toAuthErrorMessage(caught));
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  async function handleLogIn() {
+    if (submitting) {
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await authSignIn(email.trim(), password);
+      mockSignIn('incomplete');
+      router.replace('/home');
+    } catch (caught) {
+      setError(toAuthErrorMessage(caught));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const inputStyle: TextStyle = {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderColor: 'rgba(255,255,255,0.34)',
+    borderRadius: theme.radii.full,
+    borderWidth: 1,
+    color: '#FFFFFF',
+    fontFamily: appFonts.regular,
+    fontSize: theme.typography.body.fontSize,
+    lineHeight: theme.typography.body.lineHeight,
+    minHeight: 48,
+    paddingHorizontal: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
+  };
 
   return (
     <LinearGradient
@@ -34,78 +107,141 @@ export default function LoginScreen() {
         edges={['top', 'right', 'bottom', 'left']}
         style={styles.safe}
       >
-        <View
-          style={[
-            styles.content,
-            {
-              paddingBottom: theme.spacing.xl,
-              paddingHorizontal: theme.spacing.xl,
-              paddingTop: theme.spacing.xl,
-            },
-          ]}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+          style={styles.safe}
         >
-          <View style={{ gap: theme.spacing.lg, marginTop: theme.spacing.xl }}>
-            <AppText
-              variant="title"
-              style={{
-                color: '#FFFFFF',
-                fontSize: 56,
-                fontWeight: '700',
-                letterSpacing: -0.6,
-                lineHeight: 60,
-              }}
-            >
-              growth
-            </AppText>
-            <AppText
-              variant="body"
-              style={{
-                color: 'rgba(255,255,255,0.9)',
-                lineHeight: 27,
-                maxWidth: 360,
-              }}
-            >
-              A little time each day to understand yourself, shift unhelpful
-              patterns and grow.
-            </AppText>
-          </View>
-
-          <View
-            style={{
-              gap: theme.spacing.md,
-              marginTop: 'auto',
-            }}
+          <ScrollView
+            contentContainerStyle={[
+              styles.content,
+              {
+                paddingBottom: theme.spacing.xl,
+                paddingHorizontal: theme.spacing.xl,
+                paddingTop: theme.spacing.xl,
+              },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <AppButton
-              fullWidth
-              onPress={() => {
-                signUp();
-                router.replace('/home');
-              }}
+            <View style={{ gap: theme.spacing.lg, marginTop: theme.spacing.xl }}>
+              <AppText
+                variant="title"
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 56,
+                  fontWeight: '700',
+                  letterSpacing: -0.6,
+                  lineHeight: 60,
+                }}
+              >
+                growth
+              </AppText>
+              <AppText
+                variant="body"
+                style={{
+                  color: 'rgba(255,255,255,0.9)',
+                  lineHeight: 27,
+                  maxWidth: 360,
+                }}
+              >
+                A little time each day to understand yourself, shift unhelpful
+                patterns and grow.
+              </AppText>
+            </View>
+
+            <View
               style={{
-                backgroundColor: 'rgba(255,255,255,0.42)',
-                borderColor: 'rgba(255,255,255,0.58)',
-                borderWidth: 1,
+                gap: theme.spacing.md,
+                marginTop: 'auto',
+                paddingTop: theme.spacing.xxl,
               }}
             >
-              Sign up
-            </AppButton>
-            <AppButton
-              fullWidth
-              onPress={enter}
-              style={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                borderColor: 'rgba(255,255,255,0.34)',
-                borderWidth: 1,
-              }}
-            >
-              Log in
-            </AppButton>
-          </View>
-        </View>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!submitting}
+                keyboardType="email-address"
+                placeholder="Email"
+                placeholderTextColor="rgba(255,255,255,0.7)"
+                textContentType="emailAddress"
+                underlineColorAndroid="transparent"
+                style={[
+                  inputStyle,
+                  Platform.OS === 'web'
+                    ? ({
+                        outlineStyle: 'none',
+                        outlineWidth: 0,
+                      } as unknown as TextStyle)
+                    : null,
+                ]}
+              />
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!submitting}
+                placeholder="Password"
+                placeholderTextColor="rgba(255,255,255,0.7)"
+                secureTextEntry
+                textContentType="password"
+                underlineColorAndroid="transparent"
+                style={[
+                  inputStyle,
+                  Platform.OS === 'web'
+                    ? ({
+                        outlineStyle: 'none',
+                        outlineWidth: 0,
+                      } as unknown as TextStyle)
+                    : null,
+                ]}
+              />
+
+              {error ? (
+                <AppText
+                  variant="caption"
+                  style={{ color: '#FFFFFF', lineHeight: 20 }}
+                >
+                  {error}
+                </AppText>
+              ) : null}
+
+              <AppButton
+                fullWidth
+                disabled={submitting}
+                onPress={() => {
+                  void handleSignUp();
+                }}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.42)',
+                  borderColor: 'rgba(255,255,255,0.58)',
+                  borderWidth: 1,
+                }}
+              >
+                Sign up
+              </AppButton>
+              <AppButton
+                fullWidth
+                disabled={submitting}
+                onPress={() => {
+                  void handleLogIn();
+                }}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  borderColor: 'rgba(255,255,255,0.34)',
+                  borderWidth: 1,
+                }}
+              >
+                Log in
+              </AppButton>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
-
   );
 }
 
@@ -117,6 +253,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
   },
 });
