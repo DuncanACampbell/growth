@@ -2,6 +2,12 @@
 export type IsoDate = string;
 
 /**
+ * Where the user is in first-run setup.
+ * Insert future steps (e.g. `'themes'`) between `'name'` and `'complete'`.
+ */
+export type OnboardingStep = 'name' | 'complete';
+
+/**
  * The signed-in person. Theme progress and streak live beside the user,
  * not as a single selected-theme pointer.
  */
@@ -9,6 +15,7 @@ export type User = {
   id: string;
   displayName: string;
   selectedThemeId: string | null;
+  onboardingStep: OnboardingStep;
 };
 
 export type ThemeCurrency = 'EUR';

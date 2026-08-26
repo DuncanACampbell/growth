@@ -354,7 +354,12 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
     return emptyWorld(
       'new',
       today,
-      { id: 'user-new', displayName: 'Alex', selectedThemeId: null },
+      {
+        id: 'user-new',
+        displayName: '',
+        selectedThemeId: null,
+        onboardingStep: 'name',
+      },
       { currentStreak: 0 },
     );
   }
@@ -364,7 +369,12 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
     return emptyWorld(
       'incomplete',
       today,
-      { id: 'user-incomplete', displayName: 'Jordan', selectedThemeId: themeId },
+      {
+        id: 'user-incomplete',
+        displayName: 'Jordan',
+        selectedThemeId: themeId,
+        onboardingStep: 'complete',
+      },
       { currentStreak: 4 },
       [
         {
@@ -385,7 +395,12 @@ export function createMockWorld(personaId: PersonaId, today: IsoDate): MockWorld
   const world = emptyWorld(
     'complete',
     today,
-    { id: 'user-complete', displayName: 'Sam', selectedThemeId: themeId },
+    {
+      id: 'user-complete',
+      displayName: 'Sam',
+      selectedThemeId: themeId,
+      onboardingStep: 'complete',
+    },
     { currentStreak: 12, lastActivityDate: today },
     [
       {

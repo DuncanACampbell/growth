@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import { useAuthSession } from '@/lib/auth-session';
+import { getPostAuthHref } from '@/lib/onboarding';
 import { useMockSession } from '@/lib/mock-session';
 import { useTheme } from '@/theme';
 import { appFonts } from '@/theme/fonts';
@@ -35,6 +36,7 @@ export default function LoginScreen() {
   } = useAuthSession();
   const {
     isSignedIn,
+    world,
     signIn: mockSignIn,
     signUp: mockSignUp,
   } = useMockSession();
@@ -43,8 +45,8 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (isSignedIn) {
-    return <Redirect href="/home" />;
+  if (isSignedIn && world) {
+    return <Redirect href={getPostAuthHref(world)} />;
   }
 
   async function handleSignUp() {
@@ -56,7 +58,7 @@ export default function LoginScreen() {
     try {
       await authSignUp(email.trim(), password);
       mockSignUp();
-      router.replace('/home');
+      router.replace('/onboarding/name');
     } catch (caught) {
       setError(toAuthErrorMessage(caught));
     } finally {

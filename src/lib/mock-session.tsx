@@ -31,6 +31,7 @@ import {
   type CompleteSessionOptions,
 } from '@/data/progression';
 import { getLocalIsoDate } from '@/lib/calendar';
+import { nextOnboardingStepAfterName } from '@/lib/onboarding';
 import type { ChallengeMessage } from '@/types/models';
 
 const STORAGE_KEY = 'growth.mock-world.v2';
@@ -38,6 +39,12 @@ const STORAGE_KEY = 'growth.mock-world.v2';
 function normalizeWorld(world: MockWorld): MockWorld {
   return {
     ...world,
+    user: {
+      ...world.user,
+      // Existing local worlds predate onboarding — treat them as finished.
+      onboardingStep: world.user.onboardingStep ?? 'complete',
+      displayName: world.user.displayName ?? '',
+    },
     userProgress: {
       currentStreak: world.userProgress.currentStreak,
       lastActivityDate: world.userProgress.lastActivityDate,
@@ -76,6 +83,8 @@ type MockSessionValue = {
   signIn: (personaId?: PersonaId) => void;
   signUp: () => void;
   signOut: () => void;
+  /** Saves preferred name and advances onboarding (temporarily to complete). */
+  completeOnboardingName: (displayName: string) => void;
   previewPersona: (personaId: PersonaId) => void;
   selectTheme: (themeId: string) => void;
   purchaseTheme: (themeId: string) => void;
@@ -147,6 +156,26 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(() => {
     setWorld(null);
+  }, []);
+
+  const completeOnboardingName = useCallback((rawName: string) => {
+    const displayName = rawName.trim();
+    if (!displayName) {
+      return;
+    }
+    setWorld((current) => {
+      if (!current) {
+        return current;
+      }
+      return {
+        ...current,
+        user: {
+          ...current.user,
+          displayName,
+          onboardingStep: nextOnboardingStepAfterName(),
+        },
+      };
+    });
   }, []);
 
   const previewPersona = useCallback((personaId: PersonaId) => {
@@ -235,6 +264,7 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      completeOnboardingName,
       previewPersona,
       selectTheme,
       purchaseTheme,
@@ -254,6 +284,7 @@ export function MockSessionProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      completeOnboardingName,
       previewPersona,
       selectTheme,
       purchaseTheme,

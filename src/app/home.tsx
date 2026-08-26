@@ -31,6 +31,7 @@ import {
 import { useAuthSession } from '@/lib/auth-session';
 import { useMockSession } from '@/lib/mock-session';
 import { registerForExpoPushNotifications } from '@/lib/notifications/register-for-push';
+import { needsOnboarding, routeForOnboardingStep } from '@/lib/onboarding';
 import { ThemeProvider, useTheme } from '@/theme';
 import type { Challenge, Theme as CatalogTheme } from '@/types/models';
 import type { ThemeProgress } from '@/types/progress';
@@ -80,6 +81,10 @@ function HomeScreenContent() {
 
   if (!isSignedIn || !world) {
     return <Redirect href="/login" />;
+  }
+
+  if (needsOnboarding(world.user)) {
+    return <Redirect href={routeForOnboardingStep(world.user.onboardingStep)} />;
   }
 
   async function handleLogOut() {
