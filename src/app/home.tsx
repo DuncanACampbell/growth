@@ -172,25 +172,43 @@ function HomeScreenContent() {
       return (
         <View
           key={item.id}
+          accessible
+          accessibilityLabel={`${item.name} coming soon`}
           accessibilityState={{ disabled: true }}
           style={{
+            alignItems: 'center',
             backgroundColor: visual.tint,
             borderRadius: theme.radii.xxl,
-            gap: theme.spacing.xs,
+            flexDirection: 'row',
+            gap: theme.spacing.md,
             minHeight: 72,
             opacity: 0.65,
-            padding: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.xl,
+            paddingVertical: theme.spacing.lg,
           }}
         >
-          <AppText variant="body" style={{ color: visual.onTint, fontWeight: '600' }}>
-            {item.name}
-          </AppText>
-          <AppText variant="caption" style={{ color: visual.onTint, opacity: 0.8 }}>
-            {item.subtitle}
-          </AppText>
-          <AppText variant="caption" style={{ color: visual.onTint, opacity: 0.7 }}>
-            Coming soon
-          </AppText>
+          <View style={{ flex: 1, gap: theme.spacing.xs, justifyContent: 'center' }}>
+            <AppText variant="body" style={{ color: visual.onTint, fontWeight: '600' }}>
+              {item.name}
+            </AppText>
+            <AppText variant="caption" style={{ color: visual.onTint, opacity: 0.8 }}>
+              {item.subtitle}
+            </AppText>
+          </View>
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={{
+              alignItems: 'center',
+              backgroundColor: '#FFFFFF',
+              borderRadius: theme.radii.full,
+              height: 48,
+              justifyContent: 'center',
+              width: 48,
+            }}
+          >
+            <Ionicons name="lock-closed" size={18} color="#C9C3B8" />
+          </View>
         </View>
       );
     }
