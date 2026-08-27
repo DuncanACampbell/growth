@@ -2,6 +2,7 @@ import { httpsCallable } from 'firebase/functions';
 
 import { getFirebaseFunctions } from './client';
 
+import { isNetworkError, USER_FACING } from '@/lib/errors/user-facing';
 import type { ProgrammeMemoryRecord } from '@/types/models';
 
 export type GuidedExerciseChatTurn = {
@@ -58,6 +59,9 @@ export function toUserFacingGuideError(
   const code = errorCode(caught);
   const message = errorMessage(caught);
 
+  if (isNetworkError(caught)) {
+    return USER_FACING.offline;
+  }
   if (code === 'functions/failed-precondition' || message.includes('already complete')) {
     return 'This conversation is already finished.';
   }

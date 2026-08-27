@@ -1,5 +1,6 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import {
+  Platform,
   Pressable,
   View,
   type PressableProps,
@@ -32,9 +33,12 @@ export function AppButton({
   circular = false,
   disabled = false,
   style,
+  onFocus,
+  onBlur,
   ...rest
 }: AppButtonProps) {
   const theme = useTheme();
+  const [keyboardFocused, setKeyboardFocused] = useState(false);
   const isPrimary = variant === 'primary';
   const labelColor = isPrimary
     ? theme.colors.buttonOnPrimary
@@ -46,6 +50,14 @@ export function AppButton({
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
+      onFocus={(event) => {
+        setKeyboardFocused(true);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        setKeyboardFocused(false);
+        onBlur?.(event);
+      }}
       style={({ pressed }) => {
         const backgroundColor = isPrimary
           ? theme.colors.buttonPrimary
@@ -53,15 +65,16 @@ export function AppButton({
         const borderColor = isPrimary
           ? 'transparent'
           : theme.colors.buttonSecondaryBorder;
+        const showWebFocus = Platform.OS === 'web' && keyboardFocused && !disabled;
 
         return [
           {
             alignItems: 'center',
             alignSelf: fullWidth ? 'stretch' : circular ? 'center' : 'flex-start',
             backgroundColor,
-            borderColor,
+            borderColor: showWebFocus ? theme.colors.primary : borderColor,
             borderRadius: theme.radii.full,
-            borderWidth: isPrimary ? 0 : 1,
+            borderWidth: showWebFocus ? 1.5 : isPrimary ? 0 : 1,
             height: circular ? BUTTON_SIZE : undefined,
             justifyContent: 'center',
             minHeight: BUTTON_SIZE,
@@ -74,8 +87,22 @@ export function AppButton({
                 : theme.spacing.xl,
             paddingVertical: circular ? 0 : theme.spacing.md,
             width: fullWidth ? '100%' : circular ? BUTTON_SIZE : undefined,
+            ...(Platform.OS === 'web'
+              ? ({
+                  cursor: disabled ? 'default' : 'pointer',
+                  outlineStyle: 'none',
+                  outlineWidth: 0,
+                  outlineColor: 'transparent',
+                } as unknown as ViewStyle)
+              : null),
           },
           style,
+          Platform.OS === 'web'
+            ? ({
+                outlineStyle: 'none',
+                outlineWidth: 0,
+              } as unknown as ViewStyle)
+            : null,
         ];
       }}
       {...rest}

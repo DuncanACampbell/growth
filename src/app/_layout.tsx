@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthSessionProvider } from '@/lib/auth-session';
 import { MockSessionProvider } from '@/lib/mock-session';
+import { ToastProvider } from '@/lib/toast';
 import { ThemeProvider } from '@/theme';
 import { appFontSources } from '@/theme/fonts';
 
@@ -32,8 +33,10 @@ export default function RootLayout() {
       <ThemeProvider>
         <AuthSessionProvider>
           <MockSessionProvider>
-            <StatusBar style="auto" />
-            <Stack screenOptions={{ headerShown: false }} />
+            <ToastProvider>
+              <StatusBar style="auto" />
+              <Stack screenOptions={{ headerShown: false }} />
+            </ToastProvider>
           </MockSessionProvider>
         </AuthSessionProvider>
       </ThemeProvider>

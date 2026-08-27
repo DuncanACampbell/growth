@@ -23,6 +23,8 @@ import {
   type SendGuidedExerciseMessageResult,
 } from '@/lib/firebase';
 import { displayStatement } from '@/lib/display-statement';
+import { logTechnicalError } from '@/lib/errors/user-facing';
+import { useToast } from '@/lib/toast';
 import { useTheme } from '@/theme';
 import { appFonts } from '@/theme/fonts';
 import type { ChallengeMessage, ProgrammeMemoryRecord } from '@/types/models';
@@ -60,6 +62,7 @@ export function GuidedExerciseChat({
   onComplete,
 }: GuidedExerciseChatProps) {
   const theme = useTheme();
+  const { showToast } = useToast();
   const restored = initialMessages.length > 0;
   const [messages, setMessages] = useState<ChallengeMessage[]>(
     restored ? initialMessages : [],
@@ -69,7 +72,6 @@ export function GuidedExerciseChat({
   const [finalStatement, setFinalStatement] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const didPersistCompletion = useRef(false);
   const skipOpeningFetch = useRef(restored);
   const sendLockRef = useRef(false);
@@ -94,13 +96,14 @@ export function GuidedExerciseChat({
 
   async function loadOpening() {
     if (!isFirebaseConfigured()) {
-      setError(toUserFacingGuideError(new Error('unavailable'), 'opening'));
+      const message = toUserFacingGuideError(new Error('unavailable'), 'opening');
+      logTechnicalError('guide.opening', new Error('unavailable'));
+      showToast({ type: 'error', message });
       setLoadingOpening(false);
       return;
     }
 
     setLoadingOpening(true);
-    setError(null);
     try {
       const { opening } = await getGuidedExerciseOpening({
         themeId,
@@ -115,8 +118,12 @@ export function GuidedExerciseChat({
       setMessages([openingMessage]);
       onHistorySave?.([openingMessage]);
     } catch (caught) {
+      logTechnicalError('guide.opening', caught);
       setMessages([]);
-      setError(toUserFacingGuideError(caught, 'opening'));
+      showToast({
+        type: 'error',
+        message: toUserFacingGuideError(caught, 'opening'),
+      });
     } finally {
       setLoadingOpening(false);
     }
@@ -146,7 +153,6 @@ export function GuidedExerciseChat({
     };
 
     setDraft('');
-    setError(null);
     setSending(true);
     setMessages((current) => [...current, userMessage]);
 
@@ -185,7 +191,11 @@ export function GuidedExerciseChat({
       if (generation !== requestGenerationRef.current) {
         return;
       }
-      setError(toUserFacingGuideError(caught, 'send'));
+      logTechnicalError('guide.send', caught);
+      showToast({
+        type: 'error',
+        message: toUserFacingGuideError(caught, 'send'),
+      });
       setDraft(text);
       setMessages((current) =>
         current.filter((item) => item.id !== userMessage.id),
@@ -382,12 +392,6 @@ export function GuidedExerciseChat({
           </View>
         ) : null}
       </ScrollView>
-
-      {error ? (
-        <AppText variant="caption" tone="danger">
-          {error}
-        </AppText>
-      ) : null}
 
       {!ready && !loadingOpening ? (
         <AppButton

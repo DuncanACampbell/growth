@@ -50,6 +50,13 @@ export const typography = {
     lineHeight: 20,
     fontWeight: '400',
   },
+  /** Tiny field-attached feedback (validation hints). */
+  hint: {
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: 12.5,
+    lineHeight: 16,
+    fontWeight: '400',
+  },
   label: {
     fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 12,
@@ -71,7 +78,8 @@ export const colors = {
     border: '#E4E4DF',
     primary: '#1F6B4A',
     onPrimary: '#FFFFFF',
-    danger: '#B42318',
+    /** Deep warm burgundy — calm, not alarm-red. */
+    danger: '#8F3D3A',
     buttonPrimary: '#1C1916',
     buttonOnPrimary: '#FFF9F3',
     buttonSecondary: '#FFFFFF',
@@ -86,7 +94,8 @@ export const colors = {
     border: '#2E2E2A',
     primary: '#5FBF91',
     onPrimary: '#0C1F16',
-    danger: '#F97066',
+    /** Soft coral rose on dark surfaces. */
+    danger: '#E39A94',
     buttonPrimary: '#F5F5F0',
     buttonOnPrimary: '#161310',
     buttonSecondary: '#2A2622',
