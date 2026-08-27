@@ -426,6 +426,11 @@ export function GuidedExerciseChat({
             accessibilityLabel="Write a reply"
             underlineColorAndroid="transparent"
             selectionColor={theme.colors.textMuted}
+            onFocus={() => {
+              requestAnimationFrame(() => {
+                scrollRef.current?.scrollToEnd({ animated: true });
+              });
+            }}
             style={[
               {
                 borderWidth: 0,

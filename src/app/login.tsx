@@ -7,10 +7,8 @@ import {
   AccessibilityInfo,
   Animated,
   Easing,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -21,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
+import { KeyboardAwareScroll } from '@/components/ui/KeyboardAwareScroll';
 import { useAuthSession } from '@/lib/auth-session';
 import {
   classifyAuthError,
@@ -320,23 +319,13 @@ export default function LoginScreen() {
         edges={['top', 'right', 'bottom', 'left']}
         style={styles.safe}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-          style={styles.safe}
+        <KeyboardAwareScroll
+          contentContainerStyle={{
+            paddingBottom: theme.spacing.xl,
+            paddingHorizontal: theme.spacing.xl,
+            paddingTop: theme.spacing.xl,
+          }}
         >
-          <ScrollView
-            contentContainerStyle={[
-              styles.content,
-              {
-                paddingBottom: theme.spacing.xl,
-                paddingHorizontal: theme.spacing.xl,
-                paddingTop: theme.spacing.xl,
-              },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
             <View style={{ gap: theme.spacing.lg, marginTop: theme.spacing.xl }}>
               <AppText
                 variant="title"
@@ -518,8 +507,7 @@ export default function LoginScreen() {
                 </AppButton>
               </View>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+        </KeyboardAwareScroll>
       </SafeAreaView>
     </LinearGradient>
   );
@@ -531,8 +519,5 @@ const styles = StyleSheet.create({
   },
   safe: {
     flex: 1,
-  },
-  content: {
-    flexGrow: 1,
   },
 });

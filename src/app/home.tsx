@@ -297,6 +297,29 @@ function HomeScreenContent() {
     <Screen>
       <View style={{ flex: 1 }}>
         <AppButton
+          circular
+          variant="secondary"
+          accessibilityLabel="Circle"
+          onPress={() => router.push('/circle')}
+          leadingIcon={
+            <Ionicons
+              name="people-outline"
+              size={20}
+              color={theme.colors.buttonOnSecondary}
+            />
+          }
+          style={{
+            backgroundColor: '#F1EBE3',
+            borderColor: 'transparent',
+            borderWidth: 0,
+            position: 'absolute',
+            left: theme.spacing.md,
+            top: theme.spacing.sm,
+            zIndex: 2,
+          }}
+        />
+
+        <AppButton
           variant="secondary"
           accessibilityLabel="Dev Controls"
           onPress={() => router.push('/dev-controls')}
@@ -323,7 +346,13 @@ function HomeScreenContent() {
             gap: theme.spacing.xxl,
           }}
         >
-          <View style={{ gap: theme.spacing.md, paddingRight: 56 }}>
+          <View
+            style={{
+              gap: theme.spacing.md,
+              paddingLeft: 56,
+              paddingRight: 56,
+            }}
+          >
             <AppText variant="greeting">
               {greetingForName(sessionWorld.user.displayName)}
             </AppText>

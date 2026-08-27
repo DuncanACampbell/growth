@@ -1,0 +1,322 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Redirect, router } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from 'react-native';
+
+import { AppButton } from '@/components/ui/AppButton';
+import { AppText } from '@/components/ui/AppText';
+import { KeyboardAwareScroll } from '@/components/ui/KeyboardAwareScroll';
+import { Screen } from '@/components/ui/Screen';
+import { useAuthSession } from '@/lib/auth-session';
+import {
+  createConnection,
+  listCircleMembers,
+  type CircleMember,
+} from '@/lib/firebase/connections';
+import { sanitizeUserFacingMessage } from '@/lib/errors/user-facing';
+import { useMockSession } from '@/lib/mock-session';
+import { needsOnboarding, routeForOnboardingStep } from '@/lib/onboarding';
+import { useToast } from '@/lib/toast';
+import { ThemeProvider, useTheme } from '@/theme';
+import { appFonts } from '@/theme/fonts';
+
+export default function CircleScreen() {
+  return (
+    <ThemeProvider scheme="light">
+      <CircleScreenContent />
+    </ThemeProvider>
+  );
+}
+
+function CircleScreenContent() {
+  const theme = useTheme();
+  const { showToast } = useToast();
+  const { user: authUser, isReady: authReady } = useAuthSession();
+  const { isSignedIn, world } = useMockSession();
+  const [members, setMembers] = useState<CircleMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [devOtherUid, setDevOtherUid] = useState('');
+  const [devBusy, setDevBusy] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const firebaseUid = authUser?.uid ?? null;
+
+  const refreshMembers = useCallback(async () => {
+    if (!firebaseUid) {
+      setMembers([]);
+      setLoading(false);
+      return;
+    }
+    try {
+      const next = await listCircleMembers(firebaseUid);
+      setMembers(next);
+    } catch (caught) {
+      const message = sanitizeUserFacingMessage(
+        caught instanceof Error ? caught.message : '',
+        'We couldn’t load your Circle right now.',
+      );
+      showToast({ type: 'error', message });
+      setMembers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [firebaseUid, showToast]);
+
+  useEffect(() => {
+    if (!authReady) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function load() {
+      if (!firebaseUid) {
+        if (!cancelled) {
+          setMembers([]);
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const next = await listCircleMembers(firebaseUid);
+        if (!cancelled) {
+          setMembers(next);
+        }
+      } catch (caught) {
+        const message = sanitizeUserFacingMessage(
+          caught instanceof Error ? caught.message : '',
+          'We couldn’t load your Circle right now.',
+        );
+        if (!cancelled) {
+          showToast({ type: 'error', message });
+          setMembers([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, firebaseUid, showToast]);
+
+  if (!isSignedIn || !world) {
+    return <Redirect href="/login" />;
+  }
+
+  if (needsOnboarding(world.user)) {
+    return <Redirect href={routeForOnboardingStep(world.user.onboardingStep)} />;
+  }
+
+  function goBack() {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/home');
+  }
+
+  async function handleDevCreateConnection() {
+    if (!firebaseUid || devBusy) {
+      return;
+    }
+    setDevBusy(true);
+    try {
+      const result = await createConnection({
+        currentUserId: firebaseUid,
+        otherUserId: devOtherUid,
+      });
+      showToast({
+        type: 'success',
+        message: result.created
+          ? 'Test connection created.'
+          : 'Connection already existed.',
+      });
+      setDevOtherUid('');
+      await refreshMembers();
+    } catch (caught) {
+      const message = sanitizeUserFacingMessage(
+        caught instanceof Error ? caught.message : '',
+        'Couldn’t create that connection.',
+      );
+      showToast({ type: 'error', message });
+    } finally {
+      setDevBusy(false);
+    }
+  }
+
+  const showEmpty = !loading && members.length === 0;
+
+  return (
+    <Screen>
+      <KeyboardAwareScroll
+        scrollRef={scrollRef}
+        contentContainerStyle={{
+          paddingBottom: theme.spacing.xxl,
+          paddingHorizontal: theme.spacing.xl,
+          paddingTop: theme.spacing.md,
+        }}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          hitSlop={8}
+          onPress={goBack}
+          style={{
+            alignItems: 'center',
+            alignSelf: 'flex-start',
+            height: 44,
+            justifyContent: 'center',
+            width: 44,
+          }}
+        >
+          <Ionicons name="chevron-back" size={24} color={theme.colors.text} />
+        </Pressable>
+
+        <View style={{ gap: theme.spacing.sm, marginTop: theme.spacing.lg }}>
+          <AppText variant="title">Circle</AppText>
+          <AppText variant="body" tone="muted">
+            The people you’re connected with on Growth.
+          </AppText>
+        </View>
+
+        {loading ? (
+          <View
+            style={{
+              alignItems: 'center',
+              flex: 1,
+              justifyContent: 'center',
+              paddingVertical: theme.spacing.xxxl,
+            }}
+          >
+            <ActivityIndicator color={theme.colors.textMuted} />
+          </View>
+        ) : showEmpty ? (
+          <View
+            style={{
+              alignItems: 'flex-start',
+              flex: 1,
+              gap: theme.spacing.xl,
+              justifyContent: 'center',
+              maxWidth: 360,
+              paddingVertical: theme.spacing.xxl,
+            }}
+          >
+            <AppText variant="body" tone="muted">
+              Your Circle is empty for now. Add someone when you’re ready.
+            </AppText>
+            <AppButton
+              accessibilityLabel="Add someone"
+              onPress={() => {
+                // Invite flow comes later.
+              }}
+            >
+              Add someone
+            </AppButton>
+          </View>
+        ) : (
+          <View
+            style={{
+              gap: theme.spacing.lg,
+              marginTop: theme.spacing.xxl,
+            }}
+          >
+            {members.map((member) => (
+              <View
+                key={member.connectionId}
+                style={{
+                  borderBottomColor: theme.colors.border,
+                  borderBottomWidth: 1,
+                  paddingBottom: theme.spacing.md,
+                }}
+              >
+                <AppText variant="body">{member.displayLabel}</AppText>
+              </View>
+            ))}
+            <AppButton
+              accessibilityLabel="Add someone"
+              onPress={() => {
+                // Invite flow comes later.
+              }}
+              style={{ alignSelf: 'flex-start', marginTop: theme.spacing.md }}
+            >
+              Add someone
+            </AppButton>
+          </View>
+        )}
+
+        {__DEV__ ? (
+          <View
+            style={{
+              borderColor: theme.colors.border,
+              borderRadius: theme.radii.lg,
+              borderWidth: 1,
+              gap: theme.spacing.md,
+              marginTop: theme.spacing.xxxl,
+              padding: theme.spacing.lg,
+            }}
+          >
+            <AppText variant="caption" tone="muted">
+              TEMPORARY / DEV ONLY — create a test connection by Firebase UID
+            </AppText>
+            {firebaseUid ? (
+              <AppText variant="caption" tone="muted">
+                Your UID: {firebaseUid}
+              </AppText>
+            ) : (
+              <AppText variant="caption" tone="danger">
+                Sign in with Firebase to test connections.
+              </AppText>
+            )}
+            <TextInput
+              value={devOtherUid}
+              onChangeText={setDevOtherUid}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={Boolean(firebaseUid) && !devBusy}
+              placeholder="Other user’s Firebase UID"
+              placeholderTextColor={theme.colors.textMuted}
+              onFocus={() => {
+                requestAnimationFrame(() => {
+                  scrollRef.current?.scrollToEnd({ animated: true });
+                });
+              }}
+              style={{
+                borderColor: theme.colors.border,
+                borderRadius: theme.radii.md,
+                borderWidth: 1,
+                color: theme.colors.text,
+                fontFamily: appFonts.regular,
+                fontSize: 15,
+                minHeight: 44,
+                paddingHorizontal: theme.spacing.md,
+                paddingVertical: theme.spacing.sm,
+              }}
+            />
+            <AppButton
+              variant="secondary"
+              disabled={!firebaseUid || !devOtherUid.trim() || devBusy}
+              onPress={() => {
+                void handleDevCreateConnection();
+              }}
+            >
+              {devBusy ? 'Creating…' : 'Create test connection'}
+            </AppButton>
+          </View>
+        ) : null}
+      </KeyboardAwareScroll>
+    </Screen>
+  );
+}

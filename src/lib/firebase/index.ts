@@ -22,3 +22,16 @@ export {
   createUserProfileOnSignUp,
   touchUserProfileOnSignIn,
 } from './user-profile';
+export {
+  connectionDocumentId,
+  createConnection,
+  displayLabelForUser,
+  getUserPublicProfile,
+  listCircleMembers,
+  listConnectionsForUser,
+} from './connections';
+export type {
+  CircleMember,
+  ConnectionRecord,
+  UserPublicProfile,
+} from './connections';

@@ -113,6 +113,9 @@ export function looksLikeTechnicalErrorMessage(message: string): boolean {
     /FirebaseError|Firebase:|auth\/[a-z0-9-]+|HttpsError|functions\//i.test(
       value,
     ) ||
+    /permission-denied|insufficient privileges|Missing or insufficient/i.test(
+      value,
+    ) ||
     /\[[\w.-]+\]\s/.test(value) ||
     /Error:|Exception:|at Object\.|TypeError|ReferenceError/i.test(value) ||
     value.length > 140

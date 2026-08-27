@@ -1,7 +1,6 @@
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   TextInput,
@@ -12,6 +11,7 @@ import {
 import { OnboardingShell } from '@/components/onboarding/OnboardingAtmosphere';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
+import { KeyboardAwareScroll } from '@/components/ui/KeyboardAwareScroll';
 import {
   canEditOnboardingName,
   isOnboardingComplete,
@@ -79,99 +79,90 @@ export default function OnboardingNameScreen() {
 
   return (
     <OnboardingShell step="name">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
-        style={styles.flex}
+      <KeyboardAwareScroll
+        contentContainerStyle={{
+          paddingBottom: theme.spacing.xl,
+          paddingHorizontal: theme.spacing.xl,
+          paddingTop: theme.spacing.xxl,
+        }}
       >
-        <View
-          style={[
-            styles.flex,
-            {
-              paddingBottom: theme.spacing.xl,
-              paddingHorizontal: theme.spacing.xl,
-              paddingTop: theme.spacing.xxl,
-            },
-          ]}
-        >
-          <View style={{ gap: theme.spacing.lg, maxWidth: 420 }}>
-            <AppText
-              variant="title"
-              style={{
-                color: theme.colors.text,
-                fontSize: 40,
-                fontWeight: '700',
-                letterSpacing: -0.8,
-                lineHeight: 46,
-              }}
-            >
-              What should we call you?
-            </AppText>
-            <AppText
-              variant="body"
-              tone="muted"
-              style={{
-                fontSize: 17,
-                lineHeight: 26,
-                maxWidth: 340,
-              }}
-            >
-              We’ll use this to make Growth feel a little more personal.
-            </AppText>
-
-            <View style={{ marginTop: theme.spacing.xl }}>
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-                autoCorrect={false}
-                autoFocus={onboardingStep === 'name'}
-                placeholder="Your name"
-                placeholderTextColor={theme.colors.textMuted}
-                returnKeyType="done"
-                textContentType="givenName"
-                underlineColorAndroid="transparent"
-                onFocus={() => {
-                  setFocused(true);
-                }}
-                onBlur={() => {
-                  setFocused(false);
-                }}
-                onSubmitEditing={() => {
-                  handleContinue();
-                }}
-                style={[
-                  inputStyle,
-                  Platform.OS === 'web'
-                    ? ({
-                        outlineStyle: 'none',
-                        outlineWidth: 0,
-                      } as unknown as TextStyle)
-                    : null,
-                ]}
-              />
-            </View>
-          </View>
-
-          <View style={styles.flex} />
-
-          <AppButton
-            fullWidth
-            disabled={!canContinue}
-            onPress={handleContinue}
-            style={
-              !canContinue
-                ? {
-                    backgroundColor: 'rgba(28, 25, 22, 0.18)',
-                    opacity: 1,
-                  }
-                : undefined
-            }
+        <View style={{ gap: theme.spacing.lg, maxWidth: 420 }}>
+          <AppText
+            variant="title"
+            style={{
+              color: theme.colors.text,
+              fontSize: 40,
+              fontWeight: '700',
+              letterSpacing: -0.8,
+              lineHeight: 46,
+            }}
           >
-            Continue
-          </AppButton>
+            What should we call you?
+          </AppText>
+          <AppText
+            variant="body"
+            tone="muted"
+            style={{
+              fontSize: 17,
+              lineHeight: 26,
+              maxWidth: 340,
+            }}
+          >
+            We’ll use this to make Growth feel a little more personal.
+          </AppText>
+
+          <View style={{ marginTop: theme.spacing.xl }}>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              autoCorrect={false}
+              autoFocus={onboardingStep === 'name'}
+              placeholder="Your name"
+              placeholderTextColor={theme.colors.textMuted}
+              returnKeyType="done"
+              textContentType="givenName"
+              underlineColorAndroid="transparent"
+              onFocus={() => {
+                setFocused(true);
+              }}
+              onBlur={() => {
+                setFocused(false);
+              }}
+              onSubmitEditing={() => {
+                handleContinue();
+              }}
+              style={[
+                inputStyle,
+                Platform.OS === 'web'
+                  ? ({
+                      outlineStyle: 'none',
+                      outlineWidth: 0,
+                    } as unknown as TextStyle)
+                  : null,
+              ]}
+            />
+          </View>
         </View>
-      </KeyboardAvoidingView>
+
+        <View style={styles.flex} />
+
+        <AppButton
+          fullWidth
+          disabled={!canContinue}
+          onPress={handleContinue}
+          style={
+            !canContinue
+              ? {
+                  backgroundColor: 'rgba(28, 25, 22, 0.18)',
+                  opacity: 1,
+                }
+              : undefined
+          }
+        >
+          Continue
+        </AppButton>
+      </KeyboardAwareScroll>
     </OnboardingShell>
   );
 }
@@ -180,5 +171,6 @@ const styles = StyleSheet.create({
   flex: {
     backgroundColor: 'transparent',
     flex: 1,
+    minHeight: 24,
   },
 });

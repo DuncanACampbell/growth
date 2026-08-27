@@ -1,0 +1,49 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Deterministic connection ids are "{uidA}_{uidB}" (sorted).
+    // Allow probing only ids that include the signed-in user.
+    function connectionIdIncludesAuthUser() {
+      return connectionId.matches('^' + request.auth.uid + '_.+$')
+        || connectionId.matches('^.+_' + request.auth.uid + '$');
+    }
+
+    // Profile docs used for auth PoC + Circle display labels.
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSelf(userId);
+      allow delete: if false;
+    }
+
+    // Mutual Circle connections — one doc per pair, readable by either member.
+    match /connections/{connectionId} {
+      // Transactions/getDoc on a missing doc need this; existing docs stay private
+      // to members only.
+      allow get: if isSignedIn() && (
+        (resource == null && connectionIdIncludesAuthUser())
+        || (resource != null && request.auth.uid in resource.data.userIds)
+      );
+
+      allow list: if isSignedIn()
+        && request.auth.uid in resource.data.userIds;
+
+      allow create: if isSignedIn()
+        && request.resource.data.userIds is list
+        && request.resource.data.userIds.size() == 2
+        && request.auth.uid in request.resource.data.userIds
+        && request.resource.data.createdBy == request.auth.uid
+        && connectionIdIncludesAuthUser();
+
+      allow update, delete: if false;
+    }
+  }
+}
