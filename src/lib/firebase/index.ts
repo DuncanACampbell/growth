@@ -29,6 +29,7 @@ export {
   getUserPublicProfile,
   listCircleMembers,
   listConnectionsForUser,
+  removeConnection,
 } from './connections';
 export type {
   CircleMember,

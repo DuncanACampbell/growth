@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -138,6 +139,49 @@ export async function createConnection(input: {
     throw caught instanceof Error
       ? caught
       : new Error('Couldn’t create that connection.');
+  }
+}
+
+/**
+ * Deletes the single mutual connection document for a pair of users.
+ * Uses the deterministic connection id; does not touch user profiles.
+ */
+export async function removeConnection(input: {
+  currentUserId: string;
+  otherUserId: string;
+}): Promise<void> {
+  const currentUserId = input.currentUserId.trim();
+  const otherUserId = input.otherUserId.trim();
+
+  if (!currentUserId) {
+    throw new Error('You need to be signed in to update your Circle.');
+  }
+  if (!otherUserId) {
+    throw new Error('Missing connection to remove.');
+  }
+  if (currentUserId === otherUserId) {
+    throw new Error('You cannot remove yourself from your Circle.');
+  }
+
+  const connectionId = connectionDocumentId(currentUserId, otherUserId);
+  const ref = doc(getFirestoreDb(), CONNECTIONS_COLLECTION, connectionId);
+
+  try {
+    await deleteDoc(ref);
+  } catch (caught) {
+    logTechnicalError('connections.remove', caught);
+    const code =
+      caught && typeof caught === 'object' && 'code' in caught
+        ? String((caught as { code?: string }).code ?? '')
+        : '';
+    if (code === 'permission-denied') {
+      throw new Error(
+        'Firestore blocked this removal. Publish the latest firestore.rules, then try again.',
+      );
+    }
+    throw caught instanceof Error
+      ? caught
+      : new Error('Couldn’t remove that person from your Circle.');
   }
 }
 

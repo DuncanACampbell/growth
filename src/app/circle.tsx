@@ -2,7 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActionSheetIOS,
   ActivityIndicator,
+  Alert,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   TextInput,
@@ -17,6 +21,7 @@ import { useAuthSession } from '@/lib/auth-session';
 import {
   createConnection,
   listCircleMembers,
+  removeConnection,
   type CircleMember,
 } from '@/lib/firebase/connections';
 import { sanitizeUserFacingMessage } from '@/lib/errors/user-facing';
@@ -25,6 +30,11 @@ import { needsOnboarding, routeForOnboardingStep } from '@/lib/onboarding';
 import { useToast } from '@/lib/toast';
 import { ThemeProvider, useTheme } from '@/theme';
 import { appFonts } from '@/theme/fonts';
+
+type WebDialog =
+  | { kind: 'actions'; member: CircleMember }
+  | { kind: 'confirm'; member: CircleMember }
+  | null;
 
 export default function CircleScreen() {
   return (
@@ -43,6 +53,7 @@ function CircleScreenContent() {
   const [loading, setLoading] = useState(true);
   const [devOtherUid, setDevOtherUid] = useState('');
   const [devBusy, setDevBusy] = useState(false);
+  const [webDialog, setWebDialog] = useState<WebDialog>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   const firebaseUid = authUser?.uid ?? null;
@@ -157,6 +168,81 @@ function CircleScreenContent() {
     }
   }
 
+  async function handleRemoveMember(member: CircleMember) {
+    if (!firebaseUid) {
+      return;
+    }
+    try {
+      await removeConnection({
+        currentUserId: firebaseUid,
+        otherUserId: member.userId,
+      });
+      await refreshMembers();
+    } catch (caught) {
+      const message = sanitizeUserFacingMessage(
+        caught instanceof Error ? caught.message : '',
+        'Couldn’t remove that person from your Circle.',
+      );
+      showToast({ type: 'error', message });
+    }
+  }
+
+  function confirmRemoveMember(member: CircleMember) {
+    if (Platform.OS === 'web') {
+      setWebDialog({ kind: 'confirm', member });
+      return;
+    }
+
+    Alert.alert(
+      `Remove ${member.displayLabel} from your Circle?`,
+      'You’ll both be removed from each other’s Circle.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            void handleRemoveMember(member);
+          },
+        },
+      ],
+    );
+  }
+
+  function openMemberActions(member: CircleMember) {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Remove from Circle'],
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: 1,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            confirmRemoveMember(member);
+          }
+        },
+      );
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      setWebDialog({ kind: 'actions', member });
+      return;
+    }
+
+    Alert.alert(member.displayLabel, undefined, [
+      {
+        text: 'Remove from Circle',
+        style: 'destructive',
+        onPress: () => {
+          confirmRemoveMember(member);
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
+
   const showEmpty = !loading && members.length === 0;
 
   return (
@@ -237,12 +323,37 @@ function CircleScreenContent() {
               <View
                 key={member.connectionId}
                 style={{
+                  alignItems: 'center',
                   borderBottomColor: theme.colors.border,
                   borderBottomWidth: 1,
+                  flexDirection: 'row',
+                  gap: theme.spacing.md,
                   paddingBottom: theme.spacing.md,
                 }}
               >
-                <AppText variant="body">{member.displayLabel}</AppText>
+                <AppText variant="body" style={{ flex: 1 }}>
+                  {member.displayLabel}
+                </AppText>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`More options for ${member.displayLabel}`}
+                  hitSlop={8}
+                  onPress={() => {
+                    openMemberActions(member);
+                  }}
+                  style={{
+                    alignItems: 'center',
+                    height: 40,
+                    justifyContent: 'center',
+                    width: 40,
+                  }}
+                >
+                  <Ionicons
+                    name="ellipsis-horizontal"
+                    size={20}
+                    color={theme.colors.textMuted}
+                  />
+                </Pressable>
               </View>
             ))}
             <AppButton
@@ -317,6 +428,123 @@ function CircleScreenContent() {
           </View>
         ) : null}
       </KeyboardAwareScroll>
+
+      {Platform.OS === 'web' && webDialog ? (
+        <Modal
+          transparent
+          animationType="fade"
+          visible
+          onRequestClose={() => {
+            setWebDialog(null);
+          }}
+        >
+          <View
+            style={{
+              alignItems: 'center',
+              backgroundColor: 'rgba(28, 25, 22, 0.35)',
+              flex: 1,
+              justifyContent: 'center',
+              paddingHorizontal: theme.spacing.xl,
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss"
+              onPress={() => {
+                setWebDialog(null);
+              }}
+              style={{
+                bottom: 0,
+                left: 0,
+                position: 'absolute',
+                right: 0,
+                top: 0,
+              }}
+            />
+            <View
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderRadius: theme.radii.xl,
+                gap: theme.spacing.md,
+                maxWidth: 400,
+                padding: theme.spacing.xl,
+                width: '100%',
+                zIndex: 1,
+              }}
+            >
+              {webDialog.kind === 'actions' ? (
+                <>
+                  <AppText variant="subtitle">{webDialog.member.displayLabel}</AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Remove from Circle"
+                    onPress={() => {
+                      setWebDialog({
+                        kind: 'confirm',
+                        member: webDialog.member,
+                      });
+                    }}
+                    style={{
+                      paddingVertical: theme.spacing.md,
+                    }}
+                  >
+                    <AppText variant="body" tone="danger">
+                      Remove from Circle
+                    </AppText>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancel"
+                    onPress={() => {
+                      setWebDialog(null);
+                    }}
+                    style={{ paddingVertical: theme.spacing.sm }}
+                  >
+                    <AppText variant="body" tone="muted">
+                      Cancel
+                    </AppText>
+                  </Pressable>
+                </>
+              ) : (
+                <>
+                  <AppText variant="subtitle">
+                    Remove {webDialog.member.displayLabel} from your Circle?
+                  </AppText>
+                  <AppText variant="body" tone="muted">
+                    You’ll both be removed from each other’s Circle.
+                  </AppText>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      gap: theme.spacing.md,
+                      justifyContent: 'flex-end',
+                      marginTop: theme.spacing.sm,
+                    }}
+                  >
+                    <AppButton
+                      variant="secondary"
+                      onPress={() => {
+                        setWebDialog(null);
+                      }}
+                    >
+                      Cancel
+                    </AppButton>
+                    <AppButton
+                      onPress={() => {
+                        const member = webDialog.member;
+                        setWebDialog(null);
+                        void handleRemoveMember(member);
+                      }}
+                    >
+                      Remove
+                    </AppButton>
+                  </View>
+                </>
+              )}
+            </View>
+          </View>
+        </Modal>
+      ) : null}
     </Screen>
   );
 }
