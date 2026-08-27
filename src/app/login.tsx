@@ -39,6 +39,7 @@ import {
   validatePasswordPresent,
   type FieldValidation,
 } from '@/lib/validation/auth';
+import { growthSignupGradient } from '@/theme/brand';
 import { useTheme } from '@/theme';
 import { appFonts } from '@/theme/fonts';
 
@@ -309,7 +310,7 @@ export default function LoginScreen() {
 
   return (
     <LinearGradient
-      colors={['#D86B6E', '#E88A9A', '#B397E8', '#90B9E9', '#88CBB0']}
+      colors={[...growthSignupGradient]}
       end={{ x: 1, y: 1 }}
       start={{ x: 0.05, y: 0 }}
       style={styles.gradient}

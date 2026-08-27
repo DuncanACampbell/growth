@@ -3,16 +3,15 @@ import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   TextInput,
   View,
   type TextStyle,
 } from 'react-native';
 
+import { OnboardingShell } from '@/components/onboarding/OnboardingAtmosphere';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
-import { Screen } from '@/components/ui/Screen';
 import {
   canEditOnboardingName,
   isOnboardingComplete,
@@ -20,21 +19,15 @@ import {
   routeForOnboardingStep,
 } from '@/lib/onboarding';
 import { useMockSession } from '@/lib/mock-session';
-import { ThemeProvider, useTheme } from '@/theme';
+import { growthBrandAccent } from '@/theme/brand';
+import { useTheme } from '@/theme';
 import { appFonts } from '@/theme/fonts';
 
 export default function OnboardingNameScreen() {
-  return (
-    <ThemeProvider scheme="light">
-      <OnboardingNameContent />
-    </ThemeProvider>
-  );
-}
-
-function OnboardingNameContent() {
   const theme = useTheme();
   const { isSignedIn, world, completeOnboardingName } = useMockSession();
   const [name, setName] = useState(world?.user.displayName ?? '');
+  const [focused, setFocused] = useState(false);
 
   if (!isSignedIn || !world) {
     return <Redirect href="/login" />;
@@ -70,95 +63,122 @@ function OnboardingNameContent() {
   }
 
   const inputStyle: TextStyle = {
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.full,
-    borderWidth: 1,
+    borderBottomColor: focused
+      ? growthBrandAccent
+      : 'rgba(26, 26, 24, 0.18)',
+    borderBottomWidth: 1.5,
     color: theme.colors.text,
-    fontFamily: appFonts.regular,
-    fontSize: theme.typography.body.fontSize,
-    lineHeight: theme.typography.body.lineHeight,
+    fontFamily: appFonts.medium,
+    fontSize: 30,
+    letterSpacing: -0.35,
+    lineHeight: 38,
     minHeight: 48,
-    paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.md,
+    paddingHorizontal: 0,
+    paddingVertical: theme.spacing.sm,
   };
 
   return (
-    <Screen>
+    <OnboardingShell step="name">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
         style={styles.flex}
       >
-        <ScrollView
-          contentContainerStyle={[
-            styles.content,
+        <View
+          style={[
+            styles.flex,
             {
               paddingBottom: theme.spacing.xl,
               paddingHorizontal: theme.spacing.xl,
-              paddingTop: theme.spacing.xxxl,
+              paddingTop: theme.spacing.xxl,
             },
           ]}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
         >
-          <View style={{ gap: theme.spacing.md, maxWidth: 400 }}>
-            <AppText variant="title">What should we call you?</AppText>
-            <AppText variant="body" tone="muted">
+          <View style={{ gap: theme.spacing.lg, maxWidth: 420 }}>
+            <AppText
+              variant="title"
+              style={{
+                color: theme.colors.text,
+                fontSize: 40,
+                fontWeight: '700',
+                letterSpacing: -0.8,
+                lineHeight: 46,
+              }}
+            >
+              What should we call you?
+            </AppText>
+            <AppText
+              variant="body"
+              tone="muted"
+              style={{
+                fontSize: 17,
+                lineHeight: 26,
+                maxWidth: 340,
+              }}
+            >
               We’ll use this to make Growth feel a little more personal.
             </AppText>
+
+            <View style={{ marginTop: theme.spacing.xl }}>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoCorrect={false}
+                autoFocus={onboardingStep === 'name'}
+                placeholder="Your name"
+                placeholderTextColor={theme.colors.textMuted}
+                returnKeyType="done"
+                textContentType="givenName"
+                underlineColorAndroid="transparent"
+                onFocus={() => {
+                  setFocused(true);
+                }}
+                onBlur={() => {
+                  setFocused(false);
+                }}
+                onSubmitEditing={() => {
+                  handleContinue();
+                }}
+                style={[
+                  inputStyle,
+                  Platform.OS === 'web'
+                    ? ({
+                        outlineStyle: 'none',
+                        outlineWidth: 0,
+                      } as unknown as TextStyle)
+                    : null,
+                ]}
+              />
+            </View>
           </View>
 
-          <View
-            style={{
-              gap: theme.spacing.md,
-              marginTop: 'auto',
-              paddingTop: theme.spacing.xxl,
-            }}
+          <View style={styles.flex} />
+
+          <AppButton
+            fullWidth
+            disabled={!canContinue}
+            onPress={handleContinue}
+            style={
+              !canContinue
+                ? {
+                    backgroundColor: 'rgba(28, 25, 22, 0.18)',
+                    opacity: 1,
+                  }
+                : undefined
+            }
           >
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-              autoCorrect={false}
-              autoFocus={onboardingStep === 'name'}
-              placeholder="Your first name"
-              placeholderTextColor={theme.colors.textMuted}
-              returnKeyType="done"
-              textContentType="givenName"
-              underlineColorAndroid="transparent"
-              onSubmitEditing={() => {
-                handleContinue();
-              }}
-              style={[
-                inputStyle,
-                Platform.OS === 'web'
-                  ? ({
-                      outlineStyle: 'none',
-                      outlineWidth: 0,
-                    } as unknown as TextStyle)
-                  : null,
-              ]}
-            />
-            <AppButton
-              fullWidth
-              disabled={!canContinue}
-              onPress={handleContinue}
-            >
-              Continue
-            </AppButton>
-          </View>
-        </ScrollView>
+            Continue
+          </AppButton>
+        </View>
       </KeyboardAvoidingView>
-    </Screen>
+    </OnboardingShell>
   );
 }
 
 const styles = StyleSheet.create({
   flex: {
+    backgroundColor: 'transparent',
     flex: 1,
-  },
-  content: {
-    flexGrow: 1,
   },
 });
