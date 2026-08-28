@@ -42,6 +42,18 @@ export type DailyConversationState = {
   finalThought: string | null;
 };
 
+export type DailyConversationPromptContext = {
+  turnCount: number;
+  phase: DailyConversationPhase;
+  previousFocus: DailyConversationFocus | null;
+  injectedGuide: DailyConversationFocus | null;
+};
+
+export type DailyConversationMessageDebug = {
+  assessment: DailyConversationState;
+  promptContext: DailyConversationPromptContext | null;
+};
+
 export type DailyConversationMessage = {
   role: 'user' | 'assistant';
   content: string;
@@ -55,6 +67,9 @@ export type GetDailyConversationOpeningResult = {
 export type SendDailyConversationMessageResult = {
   message: string;
   state: DailyConversationState;
+  debug: {
+    promptContext: DailyConversationPromptContext;
+  } | null;
 };
 
 const OPENING_RETRY = 'Couldn’t start today’s conversation. Please try again.';
@@ -132,6 +147,41 @@ function asState(value: unknown): DailyConversationState | null {
   };
 }
 
+function asFocus(value: unknown): DailyConversationFocus | null {
+  if (value == null || typeof value !== 'object') {
+    return null;
+  }
+  const record = value as { theme?: unknown; pattern?: unknown };
+  if (typeof record.theme !== 'string' || typeof record.pattern !== 'string') {
+    return null;
+  }
+  return {
+    theme: record.theme as DailyConversationTheme,
+    pattern: record.pattern as DailyConversationPatternId,
+  };
+}
+
+function asPromptContext(value: unknown): DailyConversationPromptContext | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const record = value as {
+    turnCount?: unknown;
+    phase?: unknown;
+    previousFocus?: unknown;
+    injectedGuide?: unknown;
+  };
+  if (typeof record.turnCount !== 'number' || typeof record.phase !== 'string') {
+    return null;
+  }
+  return {
+    turnCount: record.turnCount,
+    phase: record.phase as DailyConversationPhase,
+    previousFocus: asFocus(record.previousFocus),
+    injectedGuide: asFocus(record.injectedGuide),
+  };
+}
+
 export async function getDailyConversationOpening(): Promise<GetDailyConversationOpeningResult> {
   const callable = httpsCallable<
     Record<string, never>,
@@ -159,7 +209,7 @@ export async function sendDailyConversationMessage(input: {
 }): Promise<SendDailyConversationMessageResult> {
   const callable = httpsCallable<
     { messages: DailyConversationMessage[]; state: DailyConversationState },
-    { message?: unknown; state?: unknown }
+    { message?: unknown; state?: unknown; debug?: unknown }
   >(getFirebaseFunctions(), 'sendDailyConversationMessage');
 
   try {
@@ -173,7 +223,16 @@ export async function sendDailyConversationMessage(input: {
     if (!message || !state) {
       throw new Error('sendDailyConversationMessage returned an incomplete response.');
     }
-    return { message, state };
+    const debugRecord =
+      result.data.debug && typeof result.data.debug === 'object'
+        ? (result.data.debug as { promptContext?: unknown })
+        : null;
+    const promptContext = asPromptContext(debugRecord?.promptContext);
+    return {
+      message,
+      state,
+      debug: promptContext ? { promptContext } : null,
+    };
   } catch (caught) {
     logTechnicalError('firebase.sendDailyConversationMessage', caught);
     throw caught;

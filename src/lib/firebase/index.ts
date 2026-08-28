@@ -59,6 +59,8 @@ export {
 } from './daily-conversation';
 export type {
   DailyConversationMessage,
+  DailyConversationMessageDebug,
+  DailyConversationPromptContext,
   DailyConversationState,
   GetDailyConversationOpeningResult,
   SendDailyConversationMessageResult,

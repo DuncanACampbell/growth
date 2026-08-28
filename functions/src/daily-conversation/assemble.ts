@@ -48,3 +48,22 @@ export function assembleDailyConversationPrompt(input: {
   }
   return parts.join('\n\n');
 }
+
+/**
+ * Which detailed pattern guide would be injected for this incoming focus.
+ * Observational only; does not change prompt assembly.
+ */
+export function getDailyConversationInjectedGuideFocus(
+  incomingFocus: DailyConversationFocus | null,
+): DailyConversationFocus | null {
+  if (!incomingFocus) {
+    return null;
+  }
+  const guideContext = buildDailyConversationPatternGuideContext(
+    incomingFocus.pattern,
+  );
+  if (!guideContext) {
+    return null;
+  }
+  return { theme: incomingFocus.theme, pattern: incomingFocus.pattern };
+}

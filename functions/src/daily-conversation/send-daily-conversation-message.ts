@@ -1,6 +1,7 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { logCallableFailure, rethrowCallableError } from '../callable-error';
+import { getDailyConversationInjectedGuideFocus } from './assemble';
 import { resolveDailyConversationCompletion } from './completion';
 import {
   dailyConversationOpenaiApiKey,
@@ -195,6 +196,18 @@ export const sendDailyConversationMessage = onCall(
     }
 
     const suggestedPhase = getSuggestedDailyConversationPhase(turnCount);
+    const previousFocus = incomingState.focus
+      ? {
+          theme: incomingState.focus.theme,
+          pattern: incomingState.focus.pattern,
+        }
+      : null;
+    const promptContext = {
+      turnCount,
+      phase: suggestedPhase,
+      previousFocus,
+      injectedGuide: getDailyConversationInjectedGuideFocus(previousFocus),
+    };
 
     try {
       const turn = await generateDailyConversationTurn({
@@ -219,6 +232,7 @@ export const sendDailyConversationMessage = onCall(
           isComplete: completion.isComplete,
           finalThought: completion.finalThought,
         },
+        debug: { promptContext },
       };
     } catch (caught) {
       if (caught instanceof HttpsError) {

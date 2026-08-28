@@ -20,19 +20,29 @@ import {
   sendDailyConversationMessage,
   toUserFacingDailyConversationError,
   type DailyConversationMessage,
+  type DailyConversationMessageDebug,
   type DailyConversationState,
 } from '@/lib/firebase';
+import {
+  setDailyConversationDebugSnapshot,
+  snapshotDailyConversationMessageDebug,
+} from '@/lib/daily-conversation-debug';
 import { logTechnicalError } from '@/lib/errors/user-facing';
 import { useToast } from '@/lib/toast';
 import { useTheme } from '@/theme';
 import { appFonts } from '@/theme/fonts';
 
-type TranscriptItem = DailyConversationMessage & { id: string };
+type DailyConversationUiMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  debug?: DailyConversationMessageDebug;
+};
 
 export function DailyConversation() {
   const theme = useTheme();
   const { showErrorToast } = useToast();
-  const [items, setItems] = useState<TranscriptItem[]>([]);
+  const [items, setItems] = useState<DailyConversationUiMessage[]>([]);
   const [conversationState, setConversationState] =
     useState<DailyConversationState | null>(null);
   const [loadingOpening, setLoadingOpening] = useState(true);
@@ -107,7 +117,7 @@ export function DailyConversation() {
     }
 
     sendLockRef.current = true;
-    const userItem: TranscriptItem = {
+    const userItem: DailyConversationUiMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
       content: text,
@@ -127,6 +137,10 @@ export function DailyConversation() {
         messages: payload,
         state: conversationState,
       });
+      const debug = snapshotDailyConversationMessageDebug({
+        assessment: result.state,
+        promptContext: result.debug?.promptContext ?? null,
+      });
       setConversationState(result.state);
       setItems((current) => [
         ...current,
@@ -134,6 +148,7 @@ export function DailyConversation() {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: result.message,
+          debug,
         },
       ]);
       scrollToLatest();
@@ -205,6 +220,35 @@ export function DailyConversation() {
             >
               {item.content}
             </AppText>
+            {item.role === 'assistant' && item.debug ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Inspect conversation assessment"
+                hitSlop={8}
+                onPress={() => {
+                  if (!item.debug) {
+                    return;
+                  }
+                  setDailyConversationDebugSnapshot(item.debug);
+                  router.push('/daily-conversation-debug');
+                }}
+                style={{
+                  alignItems: 'center',
+                  height: 40,
+                  justifyContent: 'center',
+                  marginLeft: -8,
+                  marginTop: theme.spacing.xs,
+                  opacity: 0.42,
+                  width: 40,
+                }}
+              >
+                <Ionicons
+                  name="options-outline"
+                  size={16}
+                  color={theme.colors.textMuted}
+                />
+              </Pressable>
+            ) : null}
           </View>
         ))}
 

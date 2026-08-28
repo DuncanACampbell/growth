@@ -80,15 +80,27 @@ export type SendDailyConversationMessageRequest = {
   state: DailyConversationState;
 };
 
-export type SendDailyConversationMessageResponse = {
-  message: string;
-  state: DailyConversationState;
-};
-
-/** Internal model result. The callable response does not return this type. */
 export type DailyConversationClassification = {
   candidates: DailyConversationCandidate[];
   focus: DailyConversationFocus | null;
+};
+
+/** Compact debug snapshot of what was used to generate a turn. Not the full prompt. */
+export type DailyConversationPromptContext = {
+  turnCount: number;
+  phase: DailyConversationPhase;
+  previousFocus: DailyConversationFocus | null;
+  injectedGuide: DailyConversationFocus | null;
+};
+
+export type DailyConversationTurnDebug = {
+  promptContext: DailyConversationPromptContext;
+};
+
+export type SendDailyConversationMessageResponse = {
+  message: string;
+  state: DailyConversationState;
+  debug?: DailyConversationTurnDebug;
 };
 
 export const DAILY_CONVERSATION_PHASES: DailyConversationPhase[] = [
