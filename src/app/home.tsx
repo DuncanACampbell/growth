@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { CompletedExerciseCard } from '@/components/home/CompletedExerciseCard';
+import { DailyConversationHomeCard } from '@/components/home/DailyConversationHomeCard';
 import { IdleThemeCard } from '@/components/home/IdleThemeCard';
 import { StreakBadge } from '@/components/home/StreakBadge';
 import { TodayExerciseCard } from '@/components/home/TodayExerciseCard';
@@ -361,18 +362,22 @@ function HomeScreenContent() {
 
           {homeState === 'new' ? (
             <View style={{ gap: theme.spacing.lg }}>
-              <View style={{ gap: theme.spacing.xs }}>
-                <AppText variant="title">Today</AppText>
-                <AppText variant="body" tone="muted">
-                  Choose a theme to unlock your first conversation.
-                </AppText>
-              </View>
+              <AppText variant="title">Today</AppText>
+              <DailyConversationHomeCard
+                onPress={() => router.push('/daily-conversation')}
+              />
+              <AppText variant="body" tone="muted">
+                Or explore a theme
+              </AppText>
               {availableThemes.map((item) => catalogRow(item, false))}
               {comingSoonThemes.map((item) => catalogRow(item, true))}
             </View>
           ) : (
             <View style={{ gap: theme.spacing.lg }}>
               <AppText variant="title">Today</AppText>
+              <DailyConversationHomeCard
+                onPress={() => router.push('/daily-conversation')}
+              />
               {todayItems.map((item) => {
                 const catalog = getTheme(sessionWorld, item.progress.themeId);
                 const visual = getCatalogThemeVisual(item.progress.themeId, theme.scheme);

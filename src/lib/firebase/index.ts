@@ -52,3 +52,14 @@ export {
   recommendationFromUserId,
 } from './user-recommendations';
 export type { CircleRecommendation } from './user-recommendations';
+export {
+  getDailyConversationOpening,
+  sendDailyConversationMessage,
+  toUserFacingDailyConversationError,
+} from './daily-conversation';
+export type {
+  DailyConversationMessage,
+  DailyConversationState,
+  GetDailyConversationOpeningResult,
+  SendDailyConversationMessageResult,
+} from './daily-conversation';
