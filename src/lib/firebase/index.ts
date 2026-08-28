@@ -36,3 +36,19 @@ export type {
   ConnectionRecord,
   UserPublicProfile,
 } from './connections';
+export {
+  buildCircleInviteUrl,
+  createCircleInvite,
+  createInviteToken,
+  getCircleInvite,
+} from './circle-invites';
+export type {
+  CircleInviteDocument,
+  CircleInviteRecord,
+  CircleInviteStatus,
+} from './circle-invites';
+export {
+  listCircleRecommendations,
+  recommendationFromUserId,
+} from './user-recommendations';
+export type { CircleRecommendation } from './user-recommendations';

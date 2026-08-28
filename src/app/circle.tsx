@@ -9,21 +9,29 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   TextInput,
   View,
 } from 'react-native';
 
+import { CircleRecommendationsCarousel } from '@/components/circle/CircleRecommendationsCarousel';
 import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
 import { KeyboardAwareScroll } from '@/components/ui/KeyboardAwareScroll';
 import { Screen } from '@/components/ui/Screen';
 import { useAuthSession } from '@/lib/auth-session';
+import { createCircleInvite } from '@/lib/firebase/circle-invites';
 import {
+  connectionDocumentId,
   createConnection,
   listCircleMembers,
   removeConnection,
   type CircleMember,
 } from '@/lib/firebase/connections';
+import {
+  listCircleRecommendations,
+  type CircleRecommendation,
+} from '@/lib/firebase/user-recommendations';
 import { sanitizeUserFacingMessage } from '@/lib/errors/user-facing';
 import { useMockSession } from '@/lib/mock-session';
 import { needsOnboarding, routeForOnboardingStep } from '@/lib/onboarding';
@@ -50,9 +58,14 @@ function CircleScreenContent() {
   const { user: authUser, isReady: authReady } = useAuthSession();
   const { isSignedIn, world } = useMockSession();
   const [members, setMembers] = useState<CircleMember[]>([]);
+  const [recommendations, setRecommendations] = useState<CircleRecommendation[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [devOtherUid, setDevOtherUid] = useState('');
   const [devBusy, setDevBusy] = useState(false);
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [addingUserId, setAddingUserId] = useState<string | null>(null);
   const [webDialog, setWebDialog] = useState<WebDialog>(null);
   const scrollRef = useRef<ScrollView>(null);
 
@@ -61,12 +74,18 @@ function CircleScreenContent() {
   const refreshMembers = useCallback(async () => {
     if (!firebaseUid) {
       setMembers([]);
+      setRecommendations([]);
       setLoading(false);
       return;
     }
     try {
       const next = await listCircleMembers(firebaseUid);
       setMembers(next);
+      const nextRecommendations = await listCircleRecommendations({
+        currentUserId: firebaseUid,
+        connectedUserIds: next.map((member) => member.userId),
+      });
+      setRecommendations(nextRecommendations);
     } catch (caught) {
       const message = sanitizeUserFacingMessage(
         caught instanceof Error ? caught.message : '',
@@ -74,6 +93,7 @@ function CircleScreenContent() {
       );
       showToast({ type: 'error', message });
       setMembers([]);
+      setRecommendations([]);
     } finally {
       setLoading(false);
     }
@@ -97,8 +117,13 @@ function CircleScreenContent() {
 
       try {
         const next = await listCircleMembers(firebaseUid);
+        const nextRecommendations = await listCircleRecommendations({
+          currentUserId: firebaseUid,
+          connectedUserIds: next.map((member) => member.userId),
+        });
         if (!cancelled) {
           setMembers(next);
+          setRecommendations(nextRecommendations);
         }
       } catch (caught) {
         const message = sanitizeUserFacingMessage(
@@ -108,6 +133,7 @@ function CircleScreenContent() {
         if (!cancelled) {
           showToast({ type: 'error', message });
           setMembers([]);
+          setRecommendations([]);
         }
       } finally {
         if (!cancelled) {
@@ -137,6 +163,67 @@ function CircleScreenContent() {
       return;
     }
     router.replace('/home');
+  }
+
+  async function handleAddRecommendation(recommendation: CircleRecommendation) {
+    if (!firebaseUid || addingUserId) {
+      return;
+    }
+    setAddingUserId(recommendation.userId);
+    try {
+      const result = await createConnection({
+        currentUserId: firebaseUid,
+        otherUserId: recommendation.userId,
+      });
+      const connectionId =
+        result.connectionId ||
+        connectionDocumentId(firebaseUid, recommendation.userId);
+      const newMember: CircleMember = {
+        connectionId,
+        userId: recommendation.userId,
+        displayLabel: recommendation.displayLabel,
+      };
+      setRecommendations((current) =>
+        current.filter((item) => item.userId !== recommendation.userId),
+      );
+      setMembers((current) =>
+        [...current, newMember].sort((a, b) =>
+          a.displayLabel.localeCompare(b.displayLabel),
+        ),
+      );
+    } catch (caught) {
+      const message = sanitizeUserFacingMessage(
+        caught instanceof Error ? caught.message : '',
+        'Couldn’t add that person to your Circle.',
+      );
+      showToast({ type: 'error', message });
+    } finally {
+      setAddingUserId(null);
+    }
+  }
+
+  async function handleAddSomeone() {
+    if (!firebaseUid || inviteBusy) {
+      return;
+    }
+    setInviteBusy(true);
+    try {
+      const invite = await createCircleInvite({ inviterId: firebaseUid });
+      const message = `Join me on Growth and connect with me: ${invite.inviteUrl}`;
+      await Share.share(
+        Platform.OS === 'ios'
+          ? { message, url: invite.inviteUrl }
+          : { message },
+      );
+    } catch (caught) {
+      const message = sanitizeUserFacingMessage(
+        caught instanceof Error ? caught.message : '',
+        'Couldn’t create that invite.',
+      );
+      showToast({ type: 'error', message });
+    } finally {
+      setInviteBusy(false);
+    }
   }
 
   async function handleDevCreateConnection() {
@@ -278,6 +365,14 @@ function CircleScreenContent() {
           </AppText>
         </View>
 
+        <CircleRecommendationsCarousel
+          recommendations={recommendations}
+          addingUserId={addingUserId}
+          onAdd={(recommendation) => {
+            void handleAddRecommendation(recommendation);
+          }}
+        />
+
         {loading ? (
           <View
             style={{
@@ -305,11 +400,12 @@ function CircleScreenContent() {
             </AppText>
             <AppButton
               accessibilityLabel="Add someone"
+              disabled={inviteBusy || !firebaseUid}
               onPress={() => {
-                // Invite flow comes later.
+                void handleAddSomeone();
               }}
             >
-              Add someone
+              {inviteBusy ? 'Preparing invite…' : 'Add someone'}
             </AppButton>
           </View>
         ) : (
@@ -358,12 +454,13 @@ function CircleScreenContent() {
             ))}
             <AppButton
               accessibilityLabel="Add someone"
+              disabled={inviteBusy || !firebaseUid}
               onPress={() => {
-                // Invite flow comes later.
+                void handleAddSomeone();
               }}
               style={{ alignSelf: 'flex-start', marginTop: theme.spacing.md }}
             >
-              Add someone
+              {inviteBusy ? 'Preparing invite…' : 'Add someone'}
             </AppButton>
           </View>
         )}

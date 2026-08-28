@@ -11,8 +11,8 @@ service cloud.firestore {
     }
 
     // Deterministic connection ids are "{uidA}_{uidB}" (sorted).
-    // Allow probing only ids that include the signed-in user.
-    function connectionIdIncludesAuthUser() {
+    // Path captures must be passed in; they are not in scope inside functions.
+    function connectionIdIncludesAuthUser(connectionId) {
       return connectionId.matches('^' + request.auth.uid + '_.+$')
         || connectionId.matches('^.+_' + request.auth.uid + '$');
     }
@@ -29,7 +29,7 @@ service cloud.firestore {
       // Transactions/getDoc on a missing doc need this; existing docs stay private
       // to members only.
       allow get: if isSignedIn() && (
-        (resource == null && connectionIdIncludesAuthUser())
+        (resource == null && connectionIdIncludesAuthUser(connectionId))
         || (resource != null && request.auth.uid in resource.data.userIds)
       );
 
@@ -41,12 +41,26 @@ service cloud.firestore {
         && request.resource.data.userIds.size() == 2
         && request.auth.uid in request.resource.data.userIds
         && request.resource.data.createdBy == request.auth.uid
-        && connectionIdIncludesAuthUser();
+        && connectionIdIncludesAuthUser(connectionId);
 
       allow update: if false;
 
       allow delete: if isSignedIn()
         && request.auth.uid in resource.data.userIds;
+    }
+
+    // Circle invitations — created by the inviter; acceptance comes later.
+    match /circleInvites/{inviteToken} {
+      allow create: if isSignedIn()
+        && request.resource.data.inviterId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasOnly(['inviterId', 'createdAt', 'status']);
+
+      // Signed-in recipients need to load a pending invite by token.
+      allow get: if isSignedIn()
+        && resource.data.status == 'pending';
+
+      allow list, update, delete: if false;
     }
   }
 }

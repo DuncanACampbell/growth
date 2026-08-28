@@ -1,5 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
@@ -29,6 +29,7 @@ import {
 } from '@/lib/errors/user-facing';
 import { getPostAuthHref } from '@/lib/onboarding';
 import { useMockSession } from '@/lib/mock-session';
+import { resolveHrefAfterAuth } from '@/lib/pending-circle-invite';
 import { useToast } from '@/lib/toast';
 import {
   fieldMessage,
@@ -155,9 +156,34 @@ export default function LoginScreen() {
     'signIn',
   );
   const [submitting, setSubmitting] = useState(false);
+  const [signedInHref, setSignedInHref] = useState<Href | null>(null);
+  const [postAuthHandled, setPostAuthHandled] = useState(false);
+
+  useEffect(() => {
+    if (!isSignedIn || !world || postAuthHandled) {
+      return;
+    }
+
+    let cancelled = false;
+    void resolveHrefAfterAuth(getPostAuthHref(world)).then((href) => {
+      if (!cancelled) {
+        setSignedInHref(href);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn, world, postAuthHandled]);
 
   if (isSignedIn && world) {
-    return <Redirect href={getPostAuthHref(world)} />;
+    if (postAuthHandled) {
+      return null;
+    }
+    if (!signedInHref) {
+      return null;
+    }
+    return <Redirect href={signedInHref} />;
   }
 
   function clearErrors() {
@@ -242,9 +268,12 @@ export default function LoginScreen() {
     setSubmitting(true);
     try {
       await authSignUp(email.trim(), password);
+      setPostAuthHandled(true);
       mockSignUp();
-      router.replace('/onboarding/name');
+      const href = await resolveHrefAfterAuth('/onboarding/name');
+      router.replace(href);
     } catch (caught) {
+      setPostAuthHandled(false);
       handleAuthFailure(caught, 'signUp');
     } finally {
       setSubmitting(false);
@@ -270,9 +299,12 @@ export default function LoginScreen() {
     setSubmitting(true);
     try {
       await authSignIn(email.trim(), password);
+      setPostAuthHandled(true);
       mockSignIn('incomplete');
-      router.replace('/home');
+      const href = await resolveHrefAfterAuth('/home');
+      router.replace(href);
     } catch (caught) {
+      setPostAuthHandled(false);
       handleAuthFailure(caught, 'signIn');
     } finally {
       setSubmitting(false);

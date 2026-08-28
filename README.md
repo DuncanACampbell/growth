@@ -19,7 +19,7 @@ Copy `.env.example` to `.env` and fill in the Firebase **web app** keys from the
 
 ### Firestore rules
 
-Circle needs the rules in `firestore.rules` (users + connections). Deploy them:
+Circle needs the rules in `firestore.rules` (users, connections, and circleInvites). Deploy them:
 
 ```bash
 npx firebase-tools login
