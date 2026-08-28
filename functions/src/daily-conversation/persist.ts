@@ -59,18 +59,33 @@ export async function getDailyConversationFinalThoughtForDate(input: {
   uid: string;
   localDate: string;
 }): Promise<string | null> {
-  const db = getDb();
-  const snapshot = await db.doc(`${collectionPath(input.uid)}/${input.localDate}`).get();
-  if (!snapshot.exists) {
+  try {
+    const db = getDb();
+    const snapshot = await db
+      .doc(`${collectionPath(input.uid)}/${input.localDate}`)
+      .get();
+    if (!snapshot.exists) {
+      return null;
+    }
+    const stored = snapshot.data()?.memory;
+    const parsed = parseStoredDailyConversationMemory(stored);
+    const fromParsed = parsed?.finalThought.trim() ?? '';
+    if (fromParsed) {
+      return fromParsed;
+    }
+    const fallback = readStoredFinalThought(stored);
+    if (!fallback) {
+      logger.warn(
+        '[DailyConversationThought] document exists but thought is missing or invalid; ignoring',
+      );
+    }
+    return fallback;
+  } catch (caught) {
+    logger.warn('[DailyConversationThought] document read failed; returning none', {
+      error: caught instanceof Error ? caught.message : String(caught),
+    });
     return null;
   }
-  const stored = snapshot.data()?.memory;
-  const parsed = parseStoredDailyConversationMemory(stored);
-  const fromParsed = parsed?.finalThought.trim() ?? '';
-  if (fromParsed) {
-    return fromParsed;
-  }
-  return readStoredFinalThought(stored);
 }
 
 export function readStoredFinalThought(value: unknown): string | null {
