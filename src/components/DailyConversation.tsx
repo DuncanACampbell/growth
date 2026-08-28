@@ -14,11 +14,13 @@ import {
 
 import { AppButton } from '@/components/ui/AppButton';
 import { AppText } from '@/components/ui/AppText';
+import { getLocalIsoDate } from '@/lib/calendar';
 import {
   getDailyConversationOpening,
   isFirebaseConfigured,
   sendDailyConversationMessage,
   toUserFacingDailyConversationError,
+  type DailyConversationMemory,
   type DailyConversationMessage,
   type DailyConversationMessageDebug,
   type DailyConversationState,
@@ -45,6 +47,9 @@ export function DailyConversation() {
   const [items, setItems] = useState<DailyConversationUiMessage[]>([]);
   const [conversationState, setConversationState] =
     useState<DailyConversationState | null>(null);
+  const [previousMemory, setPreviousMemory] =
+    useState<DailyConversationMemory | null>(null);
+  const [sessionDate] = useState(() => getLocalIsoDate());
   const [loadingOpening, setLoadingOpening] = useState(true);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -78,8 +83,11 @@ export function DailyConversation() {
 
     setLoadingOpening(true);
     try {
-      const result = await getDailyConversationOpening();
+      const result = await getDailyConversationOpening({
+        localDate: sessionDate,
+      });
       setConversationState(result.state);
+      setPreviousMemory(result.previousMemory);
       setItems([
         {
           id: 'opening',
@@ -95,6 +103,7 @@ export function DailyConversation() {
       });
       setItems([]);
       setConversationState(null);
+      setPreviousMemory(null);
     } finally {
       setLoadingOpening(false);
     }
@@ -136,6 +145,8 @@ export function DailyConversation() {
       const result = await sendDailyConversationMessage({
         messages: payload,
         state: conversationState,
+        localDate: sessionDate,
+        previousMemory,
       });
       const debug = snapshotDailyConversationMessageDebug({
         assessment: result.state,

@@ -87,4 +87,18 @@ Avoid generic thoughts like:
 "Everything will be okay."
 "Believe in yourself."
 
-When not completing, set shouldComplete to false and finalThought to null.`;
+When not completing, set shouldComplete to false, finalThought to null, and memory to null.
+
+COMPACT MEMORY
+
+When shouldComplete is true, also return memory with:
+- topic: a short label for what was discussed
+- situation: one or two sentences of what was going on
+- insight: the useful point that emerged
+- outcomeType: insight, experiment, action, or null
+- outcome: the specific insight, experiment, or action if there is one, otherwise null
+- followUp: a brief user-facing next-day question if useful, otherwise null. Do not write internal instructions.
+
+Memory must describe what actually mattered in this conversation. Keep it compact. Do not diagnose, speculate about personality, or summarise the whole transcript.
+
+When not completing, memory must be null.`;

@@ -1,3 +1,4 @@
+import { logger } from 'firebase-functions';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 
 import { logCallableFailure, rethrowCallableError } from '../callable-error';
@@ -7,7 +8,13 @@ import {
   dailyConversationOpenaiApiKey,
   generateDailyConversationTurn,
 } from './generate';
+import { parseDailyConversationLocalDate } from './local-date';
+import {
+  buildDailyConversationMemory,
+  parseStoredDailyConversationMemory,
+} from './memory';
 import { isValidDailyConversationPatternForTheme } from './patterns';
+import { saveCompletedDailyConversationMemory } from './persist';
 import {
   countDailyConversationUserMessages,
   DAILY_CONVERSATION_MAX_USER_MESSAGES,
@@ -165,9 +172,16 @@ export const sendDailyConversationMessage = onCall(
       );
     }
 
-    const data = request.data as { messages?: unknown; state?: unknown };
+    const data = request.data as {
+      messages?: unknown;
+      state?: unknown;
+      localDate?: unknown;
+      previousMemory?: unknown;
+    };
     const messages = parseMessages(data.messages);
     const incomingState = parseState(data.state);
+    const localDate = parseDailyConversationLocalDate(data.localDate);
+    const previousMemory = parseStoredDailyConversationMemory(data.previousMemory);
 
     if (incomingState.isComplete) {
       throw new HttpsError(
@@ -207,6 +221,9 @@ export const sendDailyConversationMessage = onCall(
       phase: suggestedPhase,
       previousFocus,
       injectedGuide: getDailyConversationInjectedGuideFocus(previousFocus),
+      previousConversation: previousMemory
+        ? { topic: previousMemory.topic, insight: previousMemory.insight }
+        : null,
     };
 
     try {
@@ -215,6 +232,7 @@ export const sendDailyConversationMessage = onCall(
         turnCount,
         suggestedPhase,
         incomingFocus: incomingState.focus,
+        previousMemory,
       });
       const completion = resolveDailyConversationCompletion({
         turnCount,
@@ -222,16 +240,43 @@ export const sendDailyConversationMessage = onCall(
         finalThought: turn.finalThought,
         closingMessage: turn.message,
       });
+      const nextState = {
+        phase: completion.phase,
+        candidates: turn.classification.candidates,
+        focus: turn.classification.focus,
+        turnCount,
+        isComplete: completion.isComplete,
+        finalThought: completion.finalThought,
+      };
+
+      if (completion.isComplete && completion.finalThought) {
+        const memory = buildDailyConversationMemory({
+          draft: turn.memoryDraft,
+          focus: turn.classification.focus,
+          finalThought: completion.finalThought,
+          completedAt: new Date().toISOString(),
+        });
+        try {
+          await saveCompletedDailyConversationMemory({
+            uid: request.auth.uid,
+            localDate,
+            memory,
+          });
+        } catch (persistError) {
+          logger.error('Failed to save Daily Conversation memory.', {
+            uid: request.auth.uid,
+            localDate,
+            error:
+              persistError instanceof Error
+                ? persistError.message
+                : String(persistError),
+          });
+        }
+      }
+
       return {
         message: turn.message,
-        state: {
-          phase: completion.phase,
-          candidates: turn.classification.candidates,
-          focus: turn.classification.focus,
-          turnCount,
-          isComplete: completion.isComplete,
-          finalThought: completion.finalThought,
-        },
+        state: nextState,
         debug: { promptContext },
       };
     } catch (caught) {

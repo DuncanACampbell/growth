@@ -54,6 +54,9 @@ export function snapshotDailyConversationPromptContext(
     phase: context.phase,
     previousFocus: context.previousFocus ? { ...context.previousFocus } : null,
     injectedGuide: context.injectedGuide ? { ...context.injectedGuide } : null,
+    previousConversation: context.previousConversation
+      ? { ...context.previousConversation }
+      : null,
   };
 }
 

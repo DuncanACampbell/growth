@@ -4,6 +4,11 @@ import OpenAI from 'openai';
 
 import { assembleDailyConversationPrompt } from './assemble';
 import { dailyConversationCompletionHint } from './completion';
+import {
+  parseDailyConversationMemoryDraft,
+  type DailyConversationMemory,
+  type DailyConversationMemoryDraft,
+} from './memory';
 import { isValidDailyConversationPatternForTheme } from './patterns';
 import type {
   DailyConversationCandidate,
@@ -33,11 +38,34 @@ const CONFIDENCES = new Set<string>(DAILY_CONVERSATION_CONFIDENCES);
 const TURN_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['message', 'candidates', 'focus', 'shouldComplete', 'finalThought'],
+  required: ['message', 'candidates', 'focus', 'shouldComplete', 'finalThought', 'memory'],
   properties: {
     message: { type: 'string' },
     shouldComplete: { type: 'boolean' },
     finalThought: { type: ['string', 'null'] },
+    memory: {
+      type: ['object', 'null'],
+      additionalProperties: false,
+      required: [
+        'topic',
+        'situation',
+        'insight',
+        'outcomeType',
+        'outcome',
+        'followUp',
+      ],
+      properties: {
+        topic: { type: 'string' },
+        situation: { type: 'string' },
+        insight: { type: 'string' },
+        outcomeType: {
+          type: ['string', 'null'],
+          enum: ['insight', 'experiment', 'action', null],
+        },
+        outcome: { type: ['string', 'null'] },
+        followUp: { type: ['string', 'null'] },
+      },
+    },
     candidates: {
       type: 'array',
       maxItems: MAX_CANDIDATES,
@@ -72,6 +100,7 @@ export type DailyConversationModelTurn = {
   classification: DailyConversationClassification;
   shouldComplete: boolean;
   finalThought: string | null;
+  memoryDraft: DailyConversationMemoryDraft | null;
 };
 
 function isTheme(value: unknown): value is DailyConversationTheme {
@@ -158,6 +187,7 @@ export function sanitizeDailyConversationModelOutput(raw: unknown): DailyConvers
     focus?: unknown;
     shouldComplete?: unknown;
     finalThought?: unknown;
+    memory?: unknown;
   };
   if (typeof record.message !== 'string' || record.message.trim().length === 0) {
     return null;
@@ -200,12 +230,16 @@ export function sanitizeDailyConversationModelOutput(raw: unknown): DailyConvers
   if (typeof record.finalThought === 'string' && record.finalThought.trim()) {
     finalThought = record.finalThought.trim();
   }
+  const memoryDraft = shouldComplete
+    ? parseDailyConversationMemoryDraft(record.memory)
+    : null;
 
   return {
     message,
     classification: { candidates, focus },
     shouldComplete,
     finalThought,
+    memoryDraft,
   };
 }
 
@@ -214,6 +248,7 @@ export async function generateDailyConversationTurn(input: {
   turnCount: number;
   suggestedPhase: string;
   incomingFocus: DailyConversationFocus | null;
+  previousMemory: DailyConversationMemory | null;
 }): Promise<DailyConversationModelTurn> {
   const apiKey = dailyConversationOpenaiApiKey.value();
   if (!apiKey) {
@@ -223,6 +258,7 @@ export async function generateDailyConversationTurn(input: {
 
   const systemPrompt = `${assembleDailyConversationPrompt({
     incomingFocus: input.incomingFocus,
+    previousMemory: input.previousMemory,
   })}
 
 Advisory phase (server-set, do not return session counters): ${input.suggestedPhase}
@@ -233,7 +269,7 @@ ${dailyConversationCompletionHint(input.turnCount)}`;
   const completion = await client.chat.completions.create({
     model: MODEL,
     temperature: 0.5,
-    max_tokens: 700,
+    max_tokens: 900,
     response_format: {
       type: 'json_schema',
       json_schema: {

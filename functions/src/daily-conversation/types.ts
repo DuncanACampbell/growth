@@ -67,17 +67,20 @@ export type DailyConversationMessage = {
 };
 
 export type GetDailyConversationOpeningRequest = {
-  previousMemory?: DailyConversationMemory | null;
+  localDate: string;
 };
 
 export type GetDailyConversationOpeningResponse = {
   message: string;
   state: DailyConversationState;
+  previousMemory: DailyConversationMemory | null;
 };
 
 export type SendDailyConversationMessageRequest = {
   messages: DailyConversationMessage[];
   state: DailyConversationState;
+  localDate: string;
+  previousMemory?: DailyConversationMemory | null;
 };
 
 export type DailyConversationClassification = {
@@ -91,6 +94,10 @@ export type DailyConversationPromptContext = {
   phase: DailyConversationPhase;
   previousFocus: DailyConversationFocus | null;
   injectedGuide: DailyConversationFocus | null;
+  previousConversation: {
+    topic: string;
+    insight: string;
+  } | null;
 };
 
 export type DailyConversationTurnDebug = {

@@ -1,5 +1,9 @@
 import { DAILY_CONVERSATION_CLASSIFICATION_INSTRUCTIONS } from './classification-instructions';
 import { DAILY_CONVERSATION_GUIDE } from './conversation-guide';
+import {
+  formatDailyConversationPreviousMemoryContext,
+  type DailyConversationMemory,
+} from './memory';
 import { buildDailyConversationPatternSummaryContext } from './patterns';
 import { buildDailyConversationPatternGuideContext } from './patterns/guides';
 import type { DailyConversationFocus } from './types';
@@ -11,6 +15,7 @@ import type { DailyConversationFocus } from './types';
  */
 export function assembleDailyConversationPrompt(input: {
   incomingFocus?: DailyConversationFocus | null;
+  previousMemory?: DailyConversationMemory | null;
   themeSummaries?: string;
   selectedPatternGuide?: string;
   priorMemory?: string;
@@ -29,6 +34,12 @@ export function assembleDailyConversationPrompt(input: {
     if (guideContext) {
       parts.push(guideContext);
     }
+  }
+  const previousMemoryContext = formatDailyConversationPreviousMemoryContext(
+    input.previousMemory ?? null,
+  );
+  if (previousMemoryContext) {
+    parts.push(previousMemoryContext);
   }
   const themeSummaries = input.themeSummaries?.trim();
   const selectedPatternGuide = input.selectedPatternGuide?.trim();

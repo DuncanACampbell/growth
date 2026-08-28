@@ -47,6 +47,25 @@ export type DailyConversationPromptContext = {
   phase: DailyConversationPhase;
   previousFocus: DailyConversationFocus | null;
   injectedGuide: DailyConversationFocus | null;
+  previousConversation: {
+    topic: string;
+    insight: string;
+  } | null;
+};
+
+export type DailyConversationOutcomeType = 'insight' | 'experiment' | 'action';
+
+export type DailyConversationMemory = {
+  topic: string;
+  theme: DailyConversationTheme | null;
+  pattern: string | null;
+  situation: string;
+  insight: string;
+  outcomeType: DailyConversationOutcomeType | null;
+  outcome: string | null;
+  followUp: string | null;
+  finalThought: string;
+  completedAt: string;
 };
 
 export type DailyConversationMessageDebug = {
@@ -62,6 +81,7 @@ export type DailyConversationMessage = {
 export type GetDailyConversationOpeningResult = {
   message: string;
   state: DailyConversationState;
+  previousMemory: DailyConversationMemory | null;
 };
 
 export type SendDailyConversationMessageResult = {
@@ -170,6 +190,7 @@ function asPromptContext(value: unknown): DailyConversationPromptContext | null 
     phase?: unknown;
     previousFocus?: unknown;
     injectedGuide?: unknown;
+    previousConversation?: unknown;
   };
   if (typeof record.turnCount !== 'number' || typeof record.phase !== 'string') {
     return null;
@@ -179,24 +200,85 @@ function asPromptContext(value: unknown): DailyConversationPromptContext | null 
     phase: record.phase as DailyConversationPhase,
     previousFocus: asFocus(record.previousFocus),
     injectedGuide: asFocus(record.injectedGuide),
+    previousConversation: asPreviousConversation(record.previousConversation),
   };
 }
 
-export async function getDailyConversationOpening(): Promise<GetDailyConversationOpeningResult> {
+function asPreviousConversation(
+  value: unknown,
+): { topic: string; insight: string } | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const record = value as { topic?: unknown; insight?: unknown };
+  if (typeof record.topic !== 'string' || typeof record.insight !== 'string') {
+    return null;
+  }
+  const topic = record.topic.trim();
+  const insight = record.insight.trim();
+  if (!topic || !insight) {
+    return null;
+  }
+  return { topic, insight };
+}
+
+function asMemory(value: unknown): DailyConversationMemory | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const record = value as DailyConversationMemory;
+  if (
+    typeof record.topic !== 'string' ||
+    typeof record.situation !== 'string' ||
+    typeof record.insight !== 'string' ||
+    typeof record.finalThought !== 'string'
+  ) {
+    return null;
+  }
+  return {
+    topic: record.topic,
+    theme:
+      record.theme === 'self-esteem' || record.theme === 'money'
+        ? record.theme
+        : null,
+    pattern: typeof record.pattern === 'string' ? record.pattern : null,
+    situation: record.situation,
+    insight: record.insight,
+    outcomeType:
+      record.outcomeType === 'insight' ||
+      record.outcomeType === 'experiment' ||
+      record.outcomeType === 'action'
+        ? record.outcomeType
+        : null,
+    outcome: typeof record.outcome === 'string' ? record.outcome : null,
+    followUp: typeof record.followUp === 'string' ? record.followUp : null,
+    finalThought: record.finalThought,
+    completedAt:
+      typeof record.completedAt === 'string' ? record.completedAt : '',
+  };
+}
+
+export async function getDailyConversationOpening(input: {
+  localDate: string;
+}): Promise<GetDailyConversationOpeningResult> {
   const callable = httpsCallable<
-    Record<string, never>,
-    { message?: unknown; state?: unknown }
+    { localDate: string },
+    { message?: unknown; state?: unknown; previousMemory?: unknown }
   >(getFirebaseFunctions(), 'getDailyConversationOpening');
 
   try {
-    const result = await callable({});
+    const result = await callable({ localDate: input.localDate });
     const message =
       typeof result.data.message === 'string' ? result.data.message.trim() : '';
     const state = asState(result.data.state);
     if (!message || !state) {
       throw new Error('getDailyConversationOpening returned an incomplete response.');
     }
-    return { message, state };
+    return {
+      message,
+      state,
+      previousMemory: asMemory(result.data.previousMemory),
+    };
   } catch (caught) {
     logTechnicalError('firebase.getDailyConversationOpening', caught);
     throw caught;
@@ -206,9 +288,16 @@ export async function getDailyConversationOpening(): Promise<GetDailyConversatio
 export async function sendDailyConversationMessage(input: {
   messages: DailyConversationMessage[];
   state: DailyConversationState;
+  localDate: string;
+  previousMemory: DailyConversationMemory | null;
 }): Promise<SendDailyConversationMessageResult> {
   const callable = httpsCallable<
-    { messages: DailyConversationMessage[]; state: DailyConversationState },
+    {
+      messages: DailyConversationMessage[];
+      state: DailyConversationState;
+      localDate: string;
+      previousMemory: DailyConversationMemory | null;
+    },
     { message?: unknown; state?: unknown; debug?: unknown }
   >(getFirebaseFunctions(), 'sendDailyConversationMessage');
 
@@ -216,6 +305,8 @@ export async function sendDailyConversationMessage(input: {
     const result = await callable({
       messages: input.messages,
       state: input.state,
+      localDate: input.localDate,
+      previousMemory: input.previousMemory,
     });
     const message =
       typeof result.data.message === 'string' ? result.data.message.trim() : '';

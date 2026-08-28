@@ -58,6 +58,7 @@ export {
   toUserFacingDailyConversationError,
 } from './daily-conversation';
 export type {
+  DailyConversationMemory,
   DailyConversationMessage,
   DailyConversationMessageDebug,
   DailyConversationPromptContext,

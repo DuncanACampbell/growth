@@ -116,6 +116,20 @@ export function DailyConversationDebug() {
               label="Turn used for generation"
               value={String(promptContext.turnCount)}
             />
+            {promptContext.previousConversation ? (
+              <>
+                <DebugField
+                  label="Previous conversation"
+                  value={promptContext.previousConversation.topic}
+                />
+                <DebugField
+                  label="Prior insight"
+                  value={promptContext.previousConversation.insight}
+                />
+              </>
+            ) : (
+              <DebugField label="Previous conversation" value="None" />
+            )}
           </>
         ) : (
           <AppText variant="body" tone="muted">

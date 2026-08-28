@@ -94,13 +94,13 @@ export function resolveDailyConversationCompletion(input: {
 
 export function dailyConversationCompletionHint(turnCount: number): string {
   if (turnCount >= DAILY_CONVERSATION_MAX_USER_MESSAGES) {
-    return `This is the final turn (user message ${turnCount}). You MUST set shouldComplete to true and return a non-empty finalThought. Do not ask a question. Put the Thought for Today only in finalThought, not in message.`;
+    return `This is the final turn (user message ${turnCount}). You MUST set shouldComplete to true, return a non-empty finalThought, and return compact memory fields. Do not ask a question. Put the Thought for Today only in finalThought, not in message.`;
   }
   if (turnCount === 8) {
-    return 'User message 8: strongly prefer closing now unless there is an obvious reason the user still needs one more exchange. If you close, set shouldComplete true and return a non-empty finalThought.';
+    return 'User message 8: strongly prefer closing now unless there is an obvious reason the user still needs one more exchange. If you close, set shouldComplete true and return a non-empty finalThought plus compact memory.';
   }
   if (turnCount >= DAILY_CONVERSATION_MIN_NATURAL_COMPLETE) {
-    return `User message ${turnCount}: you may complete if one useful insight, experiment, or action has been reached. Do not continue only to use remaining turns. If you complete, set shouldComplete true and return a non-empty finalThought.`;
+    return `User message ${turnCount}: you may complete if one useful insight, experiment, or action has been reached. Do not continue only to use remaining turns. If you complete, set shouldComplete true and return a non-empty finalThought plus compact memory.`;
   }
-  return `User message ${turnCount}: do not complete yet. Set shouldComplete to false and finalThought to null. Keep understanding.`;
+  return `User message ${turnCount}: do not complete yet. Set shouldComplete to false, finalThought to null, and memory to null. Keep understanding.`;
 }
