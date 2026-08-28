@@ -49,6 +49,7 @@ export function resolveDailyConversationCompletion(input: {
   shouldComplete: boolean;
   finalThought: string | null;
   closingMessage: string;
+  forceComplete?: boolean;
 }): {
   isComplete: boolean;
   finalThought: string | null;
@@ -57,7 +58,10 @@ export function resolveDailyConversationCompletion(input: {
   const suggestedPhase = getSuggestedDailyConversationPhase(input.turnCount);
   const modelThought = usableDailyConversationThought(input.finalThought);
 
-  if (input.turnCount >= DAILY_CONVERSATION_MAX_USER_MESSAGES) {
+  if (
+    input.forceComplete ||
+    input.turnCount >= DAILY_CONVERSATION_MAX_USER_MESSAGES
+  ) {
     const thought =
       modelThought ??
       deriveDailyConversationThoughtFromMessage(input.closingMessage) ??
@@ -92,7 +96,13 @@ export function resolveDailyConversationCompletion(input: {
   };
 }
 
-export function dailyConversationCompletionHint(turnCount: number): string {
+export function dailyConversationCompletionHint(
+  turnCount: number,
+  wrapUp = false,
+): string {
+  if (wrapUp) {
+    return `The user has asked to wrap up now (user message ${turnCount}). You MUST set shouldComplete to true, return a non-empty finalThought, and return compact memory. Do not ask a question. Put the Thought for Today only in finalThought, not in message. The thought should be specific to this conversation. If a theme has emerged, let the thought relate to it without naming internal pattern IDs. Vary the wording; do not use a generic slogan.`;
+  }
   if (turnCount >= DAILY_CONVERSATION_MAX_USER_MESSAGES) {
     return `This is the final turn (user message ${turnCount}). You MUST set shouldComplete to true, return a non-empty finalThought, and return compact memory fields. Do not ask a question. Put the Thought for Today only in finalThought, not in message.`;
   }

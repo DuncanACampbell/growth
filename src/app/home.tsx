@@ -1,9 +1,10 @@
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
 import { CompletedExerciseCard } from '@/components/home/CompletedExerciseCard';
+import { DailyConversationCompletedCard } from '@/components/home/DailyConversationCompletedCard';
 import { DailyConversationHomeCard } from '@/components/home/DailyConversationHomeCard';
 import { IdleThemeCard } from '@/components/home/IdleThemeCard';
 import { StreakBadge } from '@/components/home/StreakBadge';
@@ -30,6 +31,9 @@ import {
   getWaitingThemeProgress,
 } from '@/data/progression';
 import { useAuthSession } from '@/lib/auth-session';
+import { getLocalIsoDate } from '@/lib/calendar';
+import { peekTodaysDailyConversationThought } from '@/lib/daily-conversation-today';
+import { getTodaysDailyConversationThought, isFirebaseConfigured } from '@/lib/firebase';
 import { useMockSession } from '@/lib/mock-session';
 import { registerForExpoPushNotifications } from '@/lib/notifications/register-for-push';
 import { needsOnboarding, routeForOnboardingStep } from '@/lib/onboarding';
@@ -78,7 +82,34 @@ function HomeScreenContent() {
   const theme = useTheme();
   const { signOut: authSignOut } = useAuthSession();
   const { isSignedIn, world, signOut: mockSignOut } = useMockSession();
+  const navigation = useNavigation();
   const [pushSetupMessage, setPushSetupMessage] = useState<string | null>(null);
+  const [dailyThought, setDailyThought] = useState<string | null>(null);
+
+  const loadDailyThought = useCallback(async () => {
+    if (!isFirebaseConfigured()) {
+      setDailyThought(peekTodaysDailyConversationThought(getLocalIsoDate()));
+      return;
+    }
+    const localDate = getLocalIsoDate();
+    const cached = peekTodaysDailyConversationThought(localDate);
+    if (cached) {
+      setDailyThought(cached);
+    }
+    const thought = await getTodaysDailyConversationThought({ localDate });
+    setDailyThought(thought);
+  }, []);
+
+  useEffect(() => {
+    void loadDailyThought();
+  }, [loadDailyThought]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      void loadDailyThought();
+    });
+    return unsubscribe;
+  }, [navigation, loadDailyThought]);
 
   if (!isSignedIn || !world) {
     return <Redirect href="/login" />;
@@ -363,6 +394,9 @@ function HomeScreenContent() {
           {homeState === 'new' ? (
             <View style={{ gap: theme.spacing.lg }}>
               <AppText variant="title">Today</AppText>
+              {dailyThought ? (
+                <DailyConversationCompletedCard thought={dailyThought} />
+              ) : null}
               <DailyConversationHomeCard
                 onPress={() => router.push('/daily-conversation')}
               />
@@ -375,6 +409,9 @@ function HomeScreenContent() {
           ) : (
             <View style={{ gap: theme.spacing.lg }}>
               <AppText variant="title">Today</AppText>
+              {dailyThought ? (
+                <DailyConversationCompletedCard thought={dailyThought} />
+              ) : null}
               <DailyConversationHomeCard
                 onPress={() => router.push('/daily-conversation')}
               />

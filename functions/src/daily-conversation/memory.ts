@@ -61,6 +61,57 @@ function parseOutcomeType(value: unknown): DailyConversationOutcomeType | null {
     : null;
 }
 
+/** Firestore Timestamp, Date, or ISO string → ISO string. Never throws. */
+export function normalizeDailyConversationCompletedAt(value: unknown): string {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString();
+  }
+  if (value && typeof value === 'object') {
+    const record = value as {
+      toDate?: unknown;
+      toISOString?: unknown;
+      _seconds?: unknown;
+      seconds?: unknown;
+    };
+    if (typeof record.toDate === 'function') {
+      try {
+        const date = (record.toDate as () => unknown)();
+        if (date instanceof Date && !Number.isNaN(date.getTime())) {
+          return date.toISOString();
+        }
+      } catch {
+        // Malformed Timestamp-like value.
+      }
+    }
+    if (typeof record.toISOString === 'function') {
+      try {
+        const iso = (record.toISOString as () => unknown)();
+        if (typeof iso === 'string' && iso.trim()) {
+          return iso.trim();
+        }
+      } catch {
+        // Ignore.
+      }
+    }
+    const seconds =
+      typeof record._seconds === 'number'
+        ? record._seconds
+        : typeof record.seconds === 'number'
+          ? record.seconds
+          : null;
+    if (seconds != null && Number.isFinite(seconds)) {
+      const date = new Date(seconds * 1000);
+      if (!Number.isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    }
+  }
+  return new Date().toISOString();
+}
+
 export function parseDailyConversationMemoryDraft(
   value: unknown,
 ): DailyConversationMemoryDraft | null {
@@ -113,10 +164,7 @@ export function parseStoredDailyConversationMemory(
     outcome: optionalField(record.outcome, LIMITS.outcome),
     followUp: optionalField(record.followUp, LIMITS.followUp),
     finalThought,
-    completedAt:
-      typeof record.completedAt === 'string' && record.completedAt.trim()
-        ? record.completedAt.trim()
-        : new Date().toISOString(),
+    completedAt: normalizeDailyConversationCompletedAt(record.completedAt),
   };
 }
 

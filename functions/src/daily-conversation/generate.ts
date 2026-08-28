@@ -249,6 +249,7 @@ export async function generateDailyConversationTurn(input: {
   suggestedPhase: string;
   incomingFocus: DailyConversationFocus | null;
   previousMemory: DailyConversationMemory | null;
+  wrapUp?: boolean;
 }): Promise<DailyConversationModelTurn> {
   const apiKey = dailyConversationOpenaiApiKey.value();
   if (!apiKey) {
@@ -263,12 +264,12 @@ export async function generateDailyConversationTurn(input: {
 
 Advisory phase (server-set, do not return session counters): ${input.suggestedPhase}
 Trusted user-message count: ${input.turnCount}
-${dailyConversationCompletionHint(input.turnCount)}`;
+${dailyConversationCompletionHint(input.turnCount, input.wrapUp === true)}`;
 
   const client = new OpenAI({ apiKey });
   const completion = await client.chat.completions.create({
     model: MODEL,
-    temperature: 0.5,
+    temperature: input.wrapUp ? 0.8 : 0.5,
     max_tokens: 900,
     response_format: {
       type: 'json_schema',

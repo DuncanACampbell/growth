@@ -54,6 +54,7 @@ export {
 export type { CircleRecommendation } from './user-recommendations';
 export {
   getDailyConversationOpening,
+  getTodaysDailyConversationThought,
   sendDailyConversationMessage,
   toUserFacingDailyConversationError,
 } from './daily-conversation';

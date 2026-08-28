@@ -81,6 +81,7 @@ export type SendDailyConversationMessageRequest = {
   state: DailyConversationState;
   localDate: string;
   previousMemory?: DailyConversationMemory | null;
+  wrapUp?: boolean;
 };
 
 export type DailyConversationClassification = {

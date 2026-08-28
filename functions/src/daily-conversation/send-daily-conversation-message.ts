@@ -16,6 +16,9 @@ import {
 import { isValidDailyConversationPatternForTheme } from './patterns';
 import { saveCompletedDailyConversationMemory } from './persist';
 import {
+  DAILY_CONVERSATION_WRAP_UP_USER_MESSAGE,
+} from './wrap-up';
+import {
   countDailyConversationUserMessages,
   DAILY_CONVERSATION_MAX_USER_MESSAGES,
   getSuggestedDailyConversationPhase,
@@ -177,11 +180,13 @@ export const sendDailyConversationMessage = onCall(
       state?: unknown;
       localDate?: unknown;
       previousMemory?: unknown;
+      wrapUp?: unknown;
     };
-    const messages = parseMessages(data.messages);
+    const incomingMessages = parseMessages(data.messages);
     const incomingState = parseState(data.state);
     const localDate = parseDailyConversationLocalDate(data.localDate);
     const previousMemory = parseStoredDailyConversationMemory(data.previousMemory);
+    const wrapUp = data.wrapUp === true;
 
     if (incomingState.isComplete) {
       throw new HttpsError(
@@ -190,11 +195,27 @@ export const sendDailyConversationMessage = onCall(
       );
     }
 
+    let messages = incomingMessages;
+    if (wrapUp) {
+      const userCount = countDailyConversationUserMessages(messages);
+      if (userCount < DAILY_CONVERSATION_MAX_USER_MESSAGES) {
+        messages = [
+          ...messages,
+          {
+            role: 'user',
+            content: DAILY_CONVERSATION_WRAP_UP_USER_MESSAGE,
+          },
+        ];
+      }
+    }
+
     const latest = messages[messages.length - 1];
     if (!latest || latest.role !== 'user') {
       throw new HttpsError(
         'invalid-argument',
-        'The latest message must be from the user.',
+        wrapUp
+          ? 'This conversation could not be wrapped up yet.'
+          : 'The latest message must be from the user.',
       );
     }
     if (!latest.content) {
@@ -233,12 +254,14 @@ export const sendDailyConversationMessage = onCall(
         suggestedPhase,
         incomingFocus: incomingState.focus,
         previousMemory,
+        wrapUp,
       });
       const completion = resolveDailyConversationCompletion({
         turnCount,
         shouldComplete: turn.shouldComplete,
         finalThought: turn.finalThought,
         closingMessage: turn.message,
+        forceComplete: wrapUp,
       });
       const nextState = {
         phase: completion.phase,

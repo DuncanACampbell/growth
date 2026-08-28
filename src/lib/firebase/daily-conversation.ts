@@ -1,6 +1,11 @@
+import { doc, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 
-import { getFirebaseFunctions } from './client';
+import { getFirebaseAuth, getFirebaseFunctions, getFirestoreDb } from './client';
+import {
+  peekTodaysDailyConversationThought,
+  rememberTodaysDailyConversationThought,
+} from '@/lib/daily-conversation-today';
 import { isNetworkError, logTechnicalError, USER_FACING } from '@/lib/errors/user-facing';
 
 export type DailyConversationPhase =
@@ -290,6 +295,7 @@ export async function sendDailyConversationMessage(input: {
   state: DailyConversationState;
   localDate: string;
   previousMemory: DailyConversationMemory | null;
+  wrapUp?: boolean;
 }): Promise<SendDailyConversationMessageResult> {
   const callable = httpsCallable<
     {
@@ -297,6 +303,7 @@ export async function sendDailyConversationMessage(input: {
       state: DailyConversationState;
       localDate: string;
       previousMemory: DailyConversationMemory | null;
+      wrapUp?: boolean;
     },
     { message?: unknown; state?: unknown; debug?: unknown }
   >(getFirebaseFunctions(), 'sendDailyConversationMessage');
@@ -307,6 +314,7 @@ export async function sendDailyConversationMessage(input: {
       state: input.state,
       localDate: input.localDate,
       previousMemory: input.previousMemory,
+      ...(input.wrapUp ? { wrapUp: true } : {}),
     });
     const message =
       typeof result.data.message === 'string' ? result.data.message.trim() : '';
@@ -327,5 +335,58 @@ export async function sendDailyConversationMessage(input: {
   } catch (caught) {
     logTechnicalError('firebase.sendDailyConversationMessage', caught);
     throw caught;
+  }
+}
+
+/** Today's completed Daily Conversation thought for Home. */
+export async function getTodaysDailyConversationThought(input: {
+  localDate: string;
+}): Promise<string | null> {
+  const cached = peekTodaysDailyConversationThought(input.localDate);
+  try {
+    const callable = httpsCallable<
+      { localDate: string },
+      { finalThought?: unknown }
+    >(getFirebaseFunctions(), 'getTodaysDailyConversationThought');
+    const result = await callable({ localDate: input.localDate });
+    const thought =
+      typeof result.data.finalThought === 'string'
+        ? result.data.finalThought.trim()
+        : '';
+    if (thought) {
+      rememberTodaysDailyConversationThought(input.localDate, thought);
+      return thought;
+    }
+  } catch (caught) {
+    logTechnicalError('firebase.getTodaysDailyConversationThought', caught);
+  }
+
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const uid = getFirebaseAuth().currentUser?.uid;
+    if (!uid) {
+      return null;
+    }
+    const ref = doc(
+      getFirestoreDb(),
+      'users',
+      uid,
+      'dailyConversations',
+      input.localDate,
+    );
+    const snapshot = await getDoc(ref);
+    if (!snapshot.exists()) {
+      return null;
+    }
+    const memory = snapshot.data().memory as { finalThought?: unknown } | undefined;
+    const thought =
+      typeof memory?.finalThought === 'string' ? memory.finalThought.trim() : '';
+    return thought.length > 0 ? thought : null;
+  } catch (caught) {
+    logTechnicalError('firebase.getTodaysDailyConversationThought.firestore', caught);
+    return null;
   }
 }

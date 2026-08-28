@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -29,6 +29,7 @@ import {
   setDailyConversationDebugSnapshot,
   snapshotDailyConversationMessageDebug,
 } from '@/lib/daily-conversation-debug';
+import { rememberTodaysDailyConversationThought } from '@/lib/daily-conversation-today';
 import { logTechnicalError } from '@/lib/errors/user-facing';
 import { useToast } from '@/lib/toast';
 import { useTheme } from '@/theme';
@@ -60,6 +61,7 @@ export function DailyConversation() {
   const isComplete = conversationState?.isComplete === true;
   const finalThought = conversationState?.finalThought?.trim() ?? '';
   const canSend = ready && !isComplete && draft.trim().length > 0 && !sending;
+  const canWrapUp = ready && !isComplete && !sending;
 
   function scrollToLatest() {
     requestAnimationFrame(() => {
@@ -113,10 +115,10 @@ export function DailyConversation() {
     void loadOpening();
   }, []);
 
-  async function send() {
-    const text = draft.trim();
+  async function submit(input: { text?: string; wrapUp?: boolean }) {
+    const wrapUp = input.wrapUp === true;
+    const text = input.text?.trim() ?? '';
     if (
-      !text ||
       !conversationState ||
       conversationState.isComplete ||
       sendLockRef.current ||
@@ -124,22 +126,31 @@ export function DailyConversation() {
     ) {
       return;
     }
+    if (!wrapUp && !text) {
+      return;
+    }
 
     sendLockRef.current = true;
-    const userItem: DailyConversationUiMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: text,
-    };
-    const nextItems = [...items, userItem];
+    const userItem: DailyConversationUiMessage | null = wrapUp
+      ? null
+      : {
+          id: `user-${Date.now()}`,
+          role: 'user',
+          content: text,
+        };
+    const nextItems = userItem ? [...items, userItem] : items;
     const payload: DailyConversationMessage[] = nextItems.map((item) => ({
       role: item.role,
       content: item.content,
     }));
 
-    setDraft('');
+    if (!wrapUp) {
+      setDraft('');
+    }
     setSending(true);
-    setItems(nextItems);
+    if (userItem) {
+      setItems(nextItems);
+    }
 
     try {
       const result = await sendDailyConversationMessage({
@@ -147,11 +158,18 @@ export function DailyConversation() {
         state: conversationState,
         localDate: sessionDate,
         previousMemory,
+        wrapUp,
       });
       const debug = snapshotDailyConversationMessageDebug({
         assessment: result.state,
         promptContext: result.debug?.promptContext ?? null,
       });
+      if (result.state.isComplete && result.state.finalThought) {
+        rememberTodaysDailyConversationThought(
+          sessionDate,
+          result.state.finalThought,
+        );
+      }
       setConversationState(result.state);
       setItems((current) => [
         ...current,
@@ -169,12 +187,18 @@ export function DailyConversation() {
         message: toUserFacingDailyConversationError(caught, 'send'),
         technicalError: caught,
       });
-      setDraft(text);
-      setItems((current) => current.filter((item) => item.id !== userItem.id));
+      if (userItem) {
+        setDraft(text);
+        setItems((current) => current.filter((item) => item.id !== userItem.id));
+      }
     } finally {
       sendLockRef.current = false;
       setSending(false);
     }
+  }
+
+  async function send() {
+    await submit({ text: draft });
   }
 
   return (
@@ -308,6 +332,9 @@ export function DailyConversation() {
             <AppButton
               fullWidth
               onPress={() => {
+                if (finalThought) {
+                  rememberTodaysDailyConversationThought(sessionDate, finalThought);
+                }
                 if (router.canGoBack()) {
                   router.back();
                   return;
@@ -332,19 +359,49 @@ export function DailyConversation() {
           Try again
         </AppButton>
       ) : isComplete ? null : (
-        <View
-          style={{
-            alignItems: 'flex-end',
-            backgroundColor: theme.colors.surface,
-            borderRadius: theme.radii.xxl,
-            flexDirection: 'row',
-            gap: theme.spacing.sm,
-            minHeight: 56,
-            paddingLeft: theme.spacing.lg,
-            paddingRight: theme.spacing.sm,
-            paddingVertical: theme.spacing.sm,
-          }}
-        >
+        <View style={{ gap: theme.spacing.sm }}>
+          <View
+            style={{
+              alignItems: 'flex-end',
+              paddingRight: theme.spacing.xs,
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Wrap up today’s conversation"
+              accessibilityState={{ disabled: !canWrapUp }}
+              disabled={!canWrapUp}
+              onPress={() => {
+                void submit({ wrapUp: true });
+              }}
+              style={{
+                alignItems: 'center',
+                height: 40,
+                justifyContent: 'center',
+                opacity: canWrapUp ? 0.55 : 0.28,
+                width: 40,
+              }}
+            >
+              <MaterialCommunityIcons
+                name="flag-checkered"
+                size={22}
+                color={theme.colors.textMuted}
+              />
+            </Pressable>
+          </View>
+          <View
+            style={{
+              alignItems: 'flex-end',
+              backgroundColor: theme.colors.surface,
+              borderRadius: theme.radii.xxl,
+              flexDirection: 'row',
+              gap: theme.spacing.sm,
+              minHeight: 56,
+              paddingLeft: theme.spacing.lg,
+              paddingRight: theme.spacing.sm,
+              paddingVertical: theme.spacing.sm,
+            }}
+          >
           <TextInput
             value={draft}
             onChangeText={setDraft}
@@ -410,6 +467,7 @@ export function DailyConversation() {
               }
             />
           </Pressable>
+        </View>
         </View>
       )}
     </View>
