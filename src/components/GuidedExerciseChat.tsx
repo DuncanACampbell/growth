@@ -62,7 +62,7 @@ export function GuidedExerciseChat({
   onComplete,
 }: GuidedExerciseChatProps) {
   const theme = useTheme();
-  const { showToast } = useToast();
+  const { showErrorToast } = useToast();
   const restored = initialMessages.length > 0;
   const [messages, setMessages] = useState<ChallengeMessage[]>(
     restored ? initialMessages : [],
@@ -96,9 +96,14 @@ export function GuidedExerciseChat({
 
   async function loadOpening() {
     if (!isFirebaseConfigured()) {
-      const message = toUserFacingGuideError(new Error('unavailable'), 'opening');
-      logTechnicalError('guide.opening', new Error('unavailable'));
-      showToast({ type: 'error', message });
+      const technicalError = new Error(
+        'Firebase is not configured on this client.',
+      );
+      logTechnicalError('guide.opening', technicalError);
+      showErrorToast({
+        message: toUserFacingGuideError(technicalError, 'opening'),
+        technicalError,
+      });
       setLoadingOpening(false);
       return;
     }
@@ -120,9 +125,9 @@ export function GuidedExerciseChat({
     } catch (caught) {
       logTechnicalError('guide.opening', caught);
       setMessages([]);
-      showToast({
-        type: 'error',
+      showErrorToast({
         message: toUserFacingGuideError(caught, 'opening'),
+        technicalError: caught,
       });
     } finally {
       setLoadingOpening(false);
@@ -192,9 +197,9 @@ export function GuidedExerciseChat({
         return;
       }
       logTechnicalError('guide.send', caught);
-      showToast({
-        type: 'error',
+      showErrorToast({
         message: toUserFacingGuideError(caught, 'send'),
+        technicalError: caught,
       });
       setDraft(text);
       setMessages((current) =>

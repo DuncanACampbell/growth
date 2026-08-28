@@ -54,7 +54,7 @@ export default function CircleScreen() {
 
 function CircleScreenContent() {
   const theme = useTheme();
-  const { showToast } = useToast();
+  const { showToast, showErrorToast } = useToast();
   const { user: authUser, isReady: authReady } = useAuthSession();
   const { isSignedIn, world } = useMockSession();
   const [members, setMembers] = useState<CircleMember[]>([]);
@@ -91,13 +91,13 @@ function CircleScreenContent() {
         caught instanceof Error ? caught.message : '',
         'We couldn’t load your Circle right now.',
       );
-      showToast({ type: 'error', message });
+      showErrorToast({ message, technicalError: caught });
       setMembers([]);
       setRecommendations([]);
     } finally {
       setLoading(false);
     }
-  }, [firebaseUid, showToast]);
+  }, [firebaseUid, showErrorToast]);
 
   useEffect(() => {
     if (!authReady) {
@@ -131,7 +131,7 @@ function CircleScreenContent() {
           'We couldn’t load your Circle right now.',
         );
         if (!cancelled) {
-          showToast({ type: 'error', message });
+          showErrorToast({ message, technicalError: caught });
           setMembers([]);
           setRecommendations([]);
         }
@@ -147,7 +147,7 @@ function CircleScreenContent() {
     return () => {
       cancelled = true;
     };
-  }, [authReady, firebaseUid, showToast]);
+  }, [authReady, firebaseUid, showErrorToast]);
 
   if (!isSignedIn || !world) {
     return <Redirect href="/login" />;
@@ -196,7 +196,7 @@ function CircleScreenContent() {
         caught instanceof Error ? caught.message : '',
         'Couldn’t add that person to your Circle.',
       );
-      showToast({ type: 'error', message });
+      showErrorToast({ message, technicalError: caught });
     } finally {
       setAddingUserId(null);
     }
@@ -220,7 +220,7 @@ function CircleScreenContent() {
         caught instanceof Error ? caught.message : '',
         'Couldn’t create that invite.',
       );
-      showToast({ type: 'error', message });
+      showErrorToast({ message, technicalError: caught });
     } finally {
       setInviteBusy(false);
     }
@@ -249,7 +249,7 @@ function CircleScreenContent() {
         caught instanceof Error ? caught.message : '',
         'Couldn’t create that connection.',
       );
-      showToast({ type: 'error', message });
+      showErrorToast({ message, technicalError: caught });
     } finally {
       setDevBusy(false);
     }
@@ -270,7 +270,7 @@ function CircleScreenContent() {
         caught instanceof Error ? caught.message : '',
         'Couldn’t remove that person from your Circle.',
       );
-      showToast({ type: 'error', message });
+      showErrorToast({ message, technicalError: caught });
     }
   }
 

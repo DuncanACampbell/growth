@@ -132,7 +132,7 @@ function FieldHint({
 
 export default function LoginScreen() {
   const theme = useTheme();
-  const { showToast } = useToast();
+  const { showErrorToast } = useToast();
   const {
     signIn: authSignIn,
     signUp: authSignUp,
@@ -224,7 +224,7 @@ export default function LoginScreen() {
     const message = toUserFacingAuthMessage(kind, mode);
 
     if (kind === 'offline' || kind === 'generic') {
-      showToast({ type: 'error', message });
+      showErrorToast({ message, technicalError: caught });
       return;
     }
 

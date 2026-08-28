@@ -2,6 +2,8 @@ import { defineSecret } from 'firebase-functions/params';
 import { logger } from 'firebase-functions';
 import OpenAI from 'openai';
 
+import { logCallableFailure } from './callable-error';
+
 import { parseProgrammeMemoryFields } from './guides/programme-memory';
 import { CONVERSATION_PHASES, type ConversationPhase } from './guides/types';
 import type { GuidedSessionTurn } from './session';
@@ -156,12 +158,7 @@ export async function generateGuidedExerciseReply(input: {
       throw caught;
     }
 
-    const status =
-      caught instanceof OpenAI.APIError ? caught.status : undefined;
-    logger.error('OpenAI request failed.', {
-      status,
-      name: caught instanceof Error ? caught.name : 'unknown',
-    });
-    throw new Error('LLM_UNAVAILABLE');
+    logCallableFailure('openai.generateGuidedExerciseReply', caught);
+    throw caught;
   }
 }

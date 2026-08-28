@@ -1,5 +1,6 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { logger } from 'firebase-functions';
+
+import { logCallableFailure } from './callable-error';
 
 import { assembleSystemPrompt } from './guides/assemble';
 import {
@@ -70,6 +71,16 @@ export const sendGuidedExerciseMessage = onCall(
     secrets: [openaiApiKey],
   },
   async (request) => {
+    // Cloud Run permits invocation so Firebase callable requests can reach this
+    // handler. User authorization is enforced here using Firebase Auth.
+    if (!request.auth) {
+      throw new HttpsError(
+        'unauthenticated',
+        'You must be signed in to use Growth.',
+      );
+    }
+    const uid = request.auth.uid;
+
     const data = request.data as SendGuidedExerciseMessageRequest;
     const message = typeof data.message === 'string' ? data.message.trim() : '';
     const themeId = typeof data.themeId === 'string' ? data.themeId.trim() : '';
@@ -101,6 +112,7 @@ export const sendGuidedExerciseMessage = onCall(
     try {
       previousMemory = parseProgrammeMemoryList(data.previousMemory);
     } catch (caught) {
+      logCallableFailure('sendGuidedExerciseMessage.previousMemory', caught);
       const reason = caught instanceof Error ? caught.message : 'previousMemory is invalid.';
       throw new HttpsError('invalid-argument', reason);
     }
@@ -135,7 +147,8 @@ export const sendGuidedExerciseMessage = onCall(
         memory: result.isComplete ? result.memory : null,
       };
     } catch (caught) {
-      logger.error('Guided exercise LLM call failed.', {
+      logCallableFailure('sendGuidedExerciseMessage.llm', caught, {
+        uid,
         sessionId: sessionId ?? null,
         themeId,
         exerciseId,

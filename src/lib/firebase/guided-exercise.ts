@@ -2,7 +2,11 @@ import { httpsCallable } from 'firebase/functions';
 
 import { getFirebaseFunctions } from './client';
 
-import { isNetworkError, USER_FACING } from '@/lib/errors/user-facing';
+import {
+  isNetworkError,
+  logTechnicalError,
+  USER_FACING,
+} from '@/lib/errors/user-facing';
 import type { ProgrammeMemoryRecord } from '@/types/models';
 
 export type GuidedExerciseChatTurn = {
@@ -83,7 +87,9 @@ export async function getGuidedExerciseOpening(
   const themeId = input.themeId.trim();
   const exerciseId = input.exerciseId.trim();
   if (!themeId || !exerciseId) {
-    throw new Error(OPENING_RETRY);
+    throw new Error(
+      'getGuidedExerciseOpening requires themeId and exerciseId.',
+    );
   }
 
   const callable = httpsCallable<
@@ -95,11 +101,12 @@ export async function getGuidedExerciseOpening(
     const result = await callable({ themeId, exerciseId });
     const opening = result.data.opening?.trim();
     if (!opening) {
-      throw new Error(OPENING_RETRY);
+      throw new Error('getGuidedExerciseOpening returned an empty opening.');
     }
     return { opening };
   } catch (caught) {
-    throw new Error(toUserFacingGuideError(caught, 'opening'));
+    logTechnicalError('firebase.getGuidedExerciseOpening', caught);
+    throw caught;
   }
 }
 

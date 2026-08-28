@@ -134,6 +134,187 @@ export function sanitizeUserFacingMessage(
   return trimmed;
 }
 
+const MAX_STACK_CHARS = 8000;
+const MAX_JSON_CHARS = 4000;
+
+function serializeUnknown(value: unknown): string {
+  if (value == null) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  if (
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    typeof value === 'bigint'
+  ) {
+    return String(value);
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return Object.prototype.toString.call(value);
+  }
+}
+
+function appendUniqueLine(lines: string[], line: string): void {
+  const trimmed = line.trim();
+  if (!trimmed || lines.includes(trimmed)) {
+    return;
+  }
+  lines.push(trimmed);
+}
+
+function readObjectField(value: unknown, key: string): string {
+  if (!value || typeof value !== 'object' || !(key in value)) {
+    return '';
+  }
+  const field = (value as Record<string, unknown>)[key];
+  if (typeof field === 'string' && field.trim()) {
+    return field.trim();
+  }
+  if (typeof field === 'number' || typeof field === 'boolean') {
+    return String(field);
+  }
+  return '';
+}
+
+/**
+ * Turns an unknown thrown value into copy-paste debug text.
+ * Prefer name, message, Firebase/error code, and stack. Never use this in UI.
+ */
+export function formatTechnicalError(error: unknown): string {
+  if (error == null) {
+    return '';
+  }
+
+  if (typeof error === 'string') {
+    return error.trim();
+  }
+
+  if (
+    typeof error === 'number' ||
+    typeof error === 'boolean' ||
+    typeof error === 'bigint'
+  ) {
+    return String(error);
+  }
+
+  const name = readObjectField(error, 'name');
+  const message =
+    error instanceof Error && error.message.trim()
+      ? error.message.trim()
+      : readObjectField(error, 'message');
+  const code = readErrorCode(error);
+  const stack =
+    error instanceof Error && error.stack?.trim()
+      ? error.stack.trim()
+      : readObjectField(error, 'stack');
+  const details =
+    error && typeof error === 'object' && 'details' in error
+      ? (error as { details: unknown }).details
+      : undefined;
+  const cause =
+    error && typeof error === 'object' && 'cause' in error
+      ? (error as { cause: unknown }).cause
+      : undefined;
+
+  const lines: string[] = [];
+  if (name) {
+    appendUniqueLine(lines, `name: ${name}`);
+  }
+  if (message) {
+    appendUniqueLine(lines, `message: ${message}`);
+  }
+  if (code) {
+    appendUniqueLine(lines, `code: ${code}`);
+  }
+
+  const detailsText = serializeUnknown(details);
+  if (detailsText) {
+    appendUniqueLine(lines, `details: ${detailsText.slice(0, MAX_JSON_CHARS)}`);
+  }
+
+  if (error && typeof error === 'object' && 'customData' in error) {
+    const data = (error as { customData: unknown }).customData;
+    const customText = serializeUnknown(data);
+    if (customText && customText !== detailsText) {
+      appendUniqueLine(
+        lines,
+        `customData: ${customText.slice(0, MAX_JSON_CHARS)}`,
+      );
+    }
+  }
+
+  if (cause != null && cause !== error) {
+    const causeText =
+      cause instanceof Error || (cause && typeof cause === 'object')
+        ? formatTechnicalError(cause)
+        : serializeUnknown(cause);
+    if (causeText) {
+      appendUniqueLine(lines, `cause: ${causeText.slice(0, MAX_JSON_CHARS)}`);
+    }
+  }
+
+  if (stack) {
+    appendUniqueLine(lines, stack.slice(0, MAX_STACK_CHARS));
+  }
+
+  if (lines.length > 0) {
+    return lines.join('\n');
+  }
+
+  if (typeof error === 'object') {
+    try {
+      return JSON.stringify(error).slice(0, MAX_JSON_CHARS);
+    } catch {
+      return Object.prototype.toString.call(error);
+    }
+  }
+
+  return String(error);
+}
+
+function lineDuplicatesUserMessage(line: string, userMessage: string): boolean {
+  const trimmed = line.trim();
+  if (!userMessage || !trimmed) {
+    return false;
+  }
+  if (trimmed === userMessage) {
+    return true;
+  }
+  const withoutLabel = trimmed.replace(
+    /^(name|message|code|details|customData|cause):\s*/i,
+    '',
+  );
+  if (withoutLabel === userMessage) {
+    return true;
+  }
+  return (
+    /^(Error|FirebaseError|HttpsError):\s/.test(trimmed) &&
+    trimmed.endsWith(userMessage)
+  );
+}
+
+/** Clipboard payload for error toasts. Technical text is never shown in the UI. */
+export function buildErrorToastClipboardText(
+  userMessage: string,
+  technicalError?: unknown,
+): string {
+  const visible = userMessage.trim();
+  const technical = formatTechnicalError(technicalError)
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter((line) => !lineDuplicatesUserMessage(line, visible))
+    .join('\n')
+    .trim();
+  if (!technical || technical === visible) {
+    return visible;
+  }
+  return `User message:\n${visible}\n\nTechnical details:\n${technical}`;
+}
+
 /**
  * Log technical detail in development without triggering React Native LogBox
  * banners (console.error / console.warn surface as red/yellow UI overlays).

@@ -8,6 +8,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import {
   AccessibilityInfo,
   Animated,
@@ -23,6 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { AppText } from '@/components/ui/AppText';
 import {
+  buildErrorToastClipboardText,
   sanitizeUserFacingMessage,
   USER_FACING,
 } from '@/lib/errors/user-facing';
@@ -34,6 +37,13 @@ export type ShowToastOptions = {
   type?: ToastType;
   message: string;
   durationMs?: number;
+  technicalError?: unknown;
+};
+
+export type ShowErrorToastOptions = {
+  message: string;
+  technicalError?: unknown;
+  durationMs?: number;
 };
 
 type ToastRecord = {
@@ -41,10 +51,12 @@ type ToastRecord = {
   type: ToastType;
   message: string;
   durationMs: number;
+  technicalError?: unknown;
 };
 
 type ToastContextValue = {
   showToast: (options: ShowToastOptions) => void;
+  showErrorToast: (options: ShowErrorToastOptions) => void;
   dismissToast: () => void;
 };
 
@@ -54,6 +66,7 @@ const DEFAULT_DURATION_MS = 3000;
 const ENTER_MS = 260;
 const EXIT_MS = 220;
 const SLIDE_DISTANCE = 72;
+const COPY_FEEDBACK_MS = 1800;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastRecord | null>(null);
@@ -64,24 +77,38 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const showToast = useCallback((options: ShowToastOptions) => {
-    const fallback =
-      options.type === 'error' ? USER_FACING.generic : USER_FACING.generic;
+    const type = options.type ?? 'info';
+    const fallback = USER_FACING.generic;
     const message = sanitizeUserFacingMessage(options.message, fallback);
     idRef.current += 1;
     setToast({
       id: idRef.current,
-      type: options.type ?? 'info',
+      type,
       message,
       durationMs: options.durationMs ?? DEFAULT_DURATION_MS,
+      technicalError: type === 'error' ? options.technicalError : undefined,
     });
   }, []);
+
+  const showErrorToast = useCallback(
+    (options: ShowErrorToastOptions) => {
+      showToast({
+        type: 'error',
+        message: options.message,
+        technicalError: options.technicalError,
+        durationMs: options.durationMs,
+      });
+    },
+    [showToast],
+  );
 
   const value = useMemo(
     () => ({
       showToast,
+      showErrorToast,
       dismissToast,
     }),
-    [showToast, dismissToast],
+    [showToast, showErrorToast, dismissToast],
   );
 
   return (
@@ -115,6 +142,7 @@ function ToastHost({
   const [reduceMotion, setReduceMotion] = useState(false);
   const visibleIdRef = useRef<number | null>(null);
   const exitingRef = useRef(false);
+  const dismissTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -190,6 +218,18 @@ function ToastHost({
     [opacity, reduceMotion, translateY],
   );
 
+  const scheduleDismiss = useCallback(
+    (toastId: number, delayMs: number) => {
+      if (dismissTimeoutRef.current) {
+        clearTimeout(dismissTimeoutRef.current);
+      }
+      dismissTimeoutRef.current = setTimeout(() => {
+        animateOut(toastId, onRequestDismiss);
+      }, delayMs);
+    },
+    [animateOut, onRequestDismiss],
+  );
+
   useEffect(() => {
     if (!toast) {
       visibleIdRef.current = null;
@@ -223,12 +263,13 @@ function ToastHost({
       ]).start();
     }
 
-    const timeout = setTimeout(() => {
-      animateOut(toastId, onRequestDismiss);
-    }, toast.durationMs);
+    scheduleDismiss(toastId, toast.durationMs);
 
     return () => {
-      clearTimeout(timeout);
+      if (dismissTimeoutRef.current) {
+        clearTimeout(dismissTimeoutRef.current);
+        dismissTimeoutRef.current = null;
+      }
     };
   }, [
     toast,
@@ -237,6 +278,7 @@ function ToastHost({
     translateY,
     reduceMotion,
     animateOut,
+    scheduleDismiss,
   ]);
 
   if (!toast) {
@@ -334,30 +376,113 @@ function ToastHost({
           >
             {toast.message}
           </AppText>
-          <Pressable
-            accessibilityLabel="Dismiss"
-            accessibilityRole="button"
-            hitSlop={12}
-            onPress={() => {
-              animateOut(toast.id, onRequestDismiss);
-            }}
-            style={{
-              alignItems: 'center',
-              height: 36,
-              justifyContent: 'center',
-              width: 36,
-            }}
-          >
-            <Ionicons
-              name="close"
-              size={18}
-              color={theme.colors.textMuted}
-              style={{ opacity: 0.7 }}
+          {isError ? (
+            <ErrorCopyButton
+              key={toast.id}
+              userMessage={toast.message}
+              technicalError={toast.technicalError}
+              iconColor={theme.colors.textMuted}
+              onCopied={() => {
+                scheduleDismiss(toast.id, COPY_FEEDBACK_MS);
+              }}
             />
-          </Pressable>
+          ) : (
+            <Pressable
+              accessibilityLabel="Dismiss"
+              accessibilityRole="button"
+              hitSlop={12}
+              onPress={() => {
+                animateOut(toast.id, onRequestDismiss);
+              }}
+              style={{
+                alignItems: 'center',
+                height: 36,
+                justifyContent: 'center',
+                width: 36,
+              }}
+            >
+              <Ionicons
+                name="close"
+                size={18}
+                color={theme.colors.textMuted}
+                style={{ opacity: 0.7 }}
+              />
+            </Pressable>
+          )}
         </View>
       </Animated.View>
     </View>
+  );
+}
+
+function ErrorCopyButton({
+  userMessage,
+  technicalError,
+  iconColor,
+  onCopied,
+}: {
+  userMessage: string;
+  technicalError: unknown;
+  iconColor: string;
+  onCopied: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  async function handleCopy() {
+    const text = buildErrorToastClipboardText(userMessage, technicalError);
+    try {
+      await Clipboard.setStringAsync(text);
+    } catch {
+      return;
+    }
+
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {
+      // Haptics are unavailable on some platforms.
+    }
+
+    setCopied(true);
+    onCopied();
+    if (copiedTimeoutRef.current) {
+      clearTimeout(copiedTimeoutRef.current);
+    }
+    copiedTimeoutRef.current = setTimeout(() => {
+      setCopied(false);
+    }, COPY_FEEDBACK_MS);
+  }
+
+  return (
+    <Pressable
+      accessibilityLabel={copied ? 'Copied error details' : 'Copy error details'}
+      accessibilityRole="button"
+      onPress={() => {
+        void handleCopy();
+      }}
+      style={{
+        alignItems: 'center',
+        flexShrink: 0,
+        height: 44,
+        justifyContent: 'center',
+        width: 44,
+      }}
+    >
+      <Ionicons
+        name={copied ? 'checkmark-outline' : 'copy-outline'}
+        size={18}
+        color={iconColor}
+        style={{ opacity: copied ? 0.9 : 0.55 }}
+      />
+    </Pressable>
   );
 }
 

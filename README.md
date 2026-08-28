@@ -17,6 +17,8 @@ Then open iOS Simulator (`i`), Android emulator (`a`), or scan the QR code with 
 
 Copy `.env.example` to `.env` and fill in the Firebase **web app** keys from the Firebase console. Do not commit `.env`. The app runs without Firebase until those values are set.
 
+The client always uses the **deployed** Firebase project (Auth, Firestore, and callable Functions in `us-central1`). It never connects to local Firebase emulators.
+
 ### Firestore rules
 
 Circle needs the rules in `firestore.rules` (users, connections, and circleInvites). Deploy them:
